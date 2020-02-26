@@ -1,13 +1,97 @@
 <?xml version="1.0" encoding="utf-8"?>
 <search>
   <entry>
+    <title>Standalone模式搭建</title>
+    <url>/2020/02/26/Standalone%E6%A8%A1%E5%BC%8F%E6%90%AD%E5%BB%BA/</url>
+    <content><![CDATA[<h1 id="Spark-Standalone模式"><a href="#Spark-Standalone模式" class="headerlink" title="Spark Standalone模式"></a>Spark Standalone模式</h1><h2 id="准备工作"><a href="#准备工作" class="headerlink" title="准备工作"></a>准备工作</h2><h3 id="安装配置jdk8"><a href="#安装配置jdk8" class="headerlink" title="安装配置jdk8"></a>安装配置jdk8</h3><ul>
+<li><p>检查jdk版本</p>
+</li>
+<li><p>上传jdk8和Spark2.3.1到node01</p>
+</li>
+<li><p><code>[root@node01 software]# tar -zxvf ./jdk-8u181-linux-x64.tar.gz</code></p>
+</li>
+<li><p>删除jdk安装包<code>[root@node01 software]# rm -rf ./jdk-8u181-linux-x64.tar.gz</code></p>
+</li>
+<li><p>在node01上配置jdk，注意PATH必须放到export jdk前面，不然会导致还是识别老版本的jdk</p>
+</li>
+</ul>
+<a id="more"></a>
+
+  <figure class="highlight plain"><table><tr><td class="code"><pre><span class="line"># export JAVA_HOME&#x3D;&#x2F;usr&#x2F;java&#x2F;jdk1.7.0_67</span><br><span class="line">export JAVA_HOME&#x3D;&#x2F;root&#x2F;software&#x2F;jdk1.8.0_181</span><br><span class="line">export PATH&#x3D;$JAVA_HOME&#x2F;bin:$PATH</span><br><span class="line">export HADOOP_HOME&#x3D;&#x2F;opt&#x2F;sxt&#x2F;hadoop-2.6.5</span><br><span class="line">export HBASE_HOME&#x3D;&#x2F;root&#x2F;hbase</span><br><span class="line">export PATH&#x3D;$PATH:$HADOOP_HOME&#x2F;bin:$HADOOP_HOME&#x2F;sbin:$HBASE_HOME&#x2F;bin</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li><p>在其他节点上也配置jdk8</p>
+</li>
+<li><p>发送jdk8到其他节点上<code>[root@node01 software]# scp -r ./jdk1.8.0_181/ node02:</code>pwd``</p>
+</li>
+<li><p>每个node上都要<code>source /etc/profile</code></p>
+</li>
+<li><p>直接解压的java需要覆盖软连接路径，软连接路径在<code>/usr/bin</code>下，因为spark默认会在usr/bin目录下寻找java</p>
+</li>
+<li><p>改变java的软连接<code>ln -sf /root/software/jdk1.8.0_181/bin/java  /usr/bin/java</code></p>
+</li>
+<li><p>配置hadoop配置文件中的java<code>[root@node01 hadoop]# vim hadoop-env.sh</code></p>
+</li>
+<li><p>每个节点都修改文件<code>export JAVA_HOME=/root/software/jdk1.8.0_181/bin/java</code></p>
+</li>
+<li><p>勘误：应该是改成<code>export JAVA_HOME=/root/software/jdk1.8.0_181</code><strong>不然hadoop集群起不来</strong></p>
+</li>
+</ul>
+<h3 id="安装Spark"><a href="#安装Spark" class="headerlink" title="安装Spark"></a>安装Spark</h3><ul>
+<li><p>解压<code>[root@node01 software]# tar -zxvf ./spark-2.3.1-bin-hadoop2.6.tgz</code></p>
+</li>
+<li><p>改名<code>[root@node01 software]# mv ./spark-2.3.1-bin-hadoop2.6.tgz  ./spark-2.3.1</code></p>
+</li>
+<li><p>删除安装包<code>[root@node01 software]# rm -rf ./spark-2.3.1-bin-hadoop2.6</code></p>
+</li>
+<li><p>先配置spark的slave，先复制一份<code>[root@node01 conf]# cp slaves.template slaves</code></p>
+</li>
+<li><p><code>[root@node01 conf]# vim slaves</code>添加node02，node03</p>
+</li>
+<li><p><code>[root@node01 conf]# cp spark-env.sh.template spark-env.sh</code></p>
+</li>
+<li><p><code>[root@node01 conf]# vim spark-env.sh</code>，配置相关配置信息</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">export SPARK_MASTER_HOST&#x3D;node01</span><br><span class="line">export SPARK_MASTER_PORT&#x3D;7077</span><br><span class="line">export SPARK_WORKER_CORES&#x3D;2</span><br><span class="line">export SPARK_WORKER_MEMORY&#x3D;3g</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>发送spark文件夹到node02，node03节点<code>[root@node01 sbin]# scp -r ./spark-2.3.1/ node03:</code>pwd```</p>
+</li>
+</ul>
+<h3 id="安装Spark客户端"><a href="#安装Spark客户端" class="headerlink" title="安装Spark客户端"></a>安装Spark客户端</h3><ul>
+<li><code>[root@node04 software]# mkdir spark</code></li>
+<li><code>[root@node01 software]# scp -r spark-2.3.1/ node04:</code>pwd``</li>
+<li><code>[root@node04 spark-2.3.1]# cd conf/</code></li>
+<li><code>[root@node04 conf]# rm -f ./slaves</code></li>
+<li><code>[root@node04 conf]# rm -f ./spark-env.sh</code></li>
+</ul>
+<h2 id="对Spark集群进行操作"><a href="#对Spark集群进行操作" class="headerlink" title="对Spark集群进行操作"></a>对Spark集群进行操作</h2><h3 id="运行Spark集群"><a href="#运行Spark集群" class="headerlink" title="运行Spark集群"></a>运行Spark集群</h3><ul>
+<li><p>启动spark集群，首先要进入<code>/root/software/spark-2.3.1/sbin</code>目录下，再<code>[root@node01 sbin]# ./start-all.sh</code></p>
+</li>
+<li><p>进入web端页面查看<code>node01:8080</code></p>
+<p><img src="https://willipic.oss-cn-hangzhou.aliyuncs.com/Spark/sparkweb%E9%A1%B5%E9%9D%A2%E6%9F%A5%E7%9C%8B.png" alt=""></p>
+</li>
+<li><p>关闭集群<code>[root@node01 sbin]# ./stop-all.sh</code></p>
+</li>
+</ul>
+<h3 id="Standalone模式提交任务"><a href="#Standalone模式提交任务" class="headerlink" title="Standalone模式提交任务"></a>Standalone模式提交任务</h3><ul>
+<li>启动集群</li>
+</ul>
+]]></content>
+      <categories>
+        <category>Spark</category>
+      </categories>
+      <tags>
+        <tag>Spark</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>idea远程连接hadoop进行文件操作</title>
-    <url>/2020/02/26/idea%E8%BF%9C%E7%A8%8B%E8%BF%9E%E6%8E%A5hadoop%E8%BF%9B%E8%A1%8C%E6%96%87%E4%BB%B6%E6%93%8D%E4%BD%9C/</url>
+    <url>/2019/02/26/idea%E8%BF%9C%E7%A8%8B%E8%BF%9E%E6%8E%A5hadoop%E8%BF%9B%E8%A1%8C%E6%96%87%E4%BB%B6%E6%93%8D%E4%BD%9C/</url>
     <content><![CDATA[<h1 id="idea远程连接hadoop进行文件操作"><a href="#idea远程连接hadoop进行文件操作" class="headerlink" title="idea远程连接hadoop进行文件操作"></a>idea远程连接hadoop进行文件操作</h1><p>部署完高可用集群之后，尝试idea远程连接hadoop进行操作</p>
 <h2 id="配置windows中的hadoop环境"><a href="#配置windows中的hadoop环境" class="headerlink" title="配置windows中的hadoop环境"></a>配置windows中的hadoop环境</h2><ul>
 <li><p>下载hadoop2.6.5到windows中并放在一个纯英文目录下</p>
 </li>
 <li><p>配置环境变量，先系统变量中创建HADOOP_HOME</p>
+<a id="more"></a>
 <p><img src="https://raw.githubusercontent.com/ThisisWilli/BigData/master/Hadoop/pic/%E5%88%9B%E5%BB%BAHADOOP_HOME.PNG" alt="https://raw.githubusercontent.com/ThisisWilli/BigData/master/Hadoop/pic/%E5%88%9B%E5%BB%BAHADOOP_HOME.PNG"></p>
 </li>
 <li><p>创建HADOOP_USER_NAME，名称为集群中的登录名称</p>
@@ -48,5 +132,11 @@
 </li>
 </ul>
 ]]></content>
+      <categories>
+        <category>Hadoop</category>
+      </categories>
+      <tags>
+        <tag>Hadoop</tag>
+      </tags>
   </entry>
 </search>
