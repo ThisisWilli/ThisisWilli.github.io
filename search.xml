@@ -1,6 +1,55 @@
 <?xml version="1.0" encoding="utf-8"?>
 <search>
   <entry>
+    <title>idea远程连接hadoop进行文件操作</title>
+    <url>/2020/02/26/idea%E8%BF%9C%E7%A8%8B%E8%BF%9E%E6%8E%A5hadoop%E8%BF%9B%E8%A1%8C%E6%96%87%E4%BB%B6%E6%93%8D%E4%BD%9C/</url>
+    <content><![CDATA[<h1 id="idea远程连接hadoop进行文件操作"><a href="#idea远程连接hadoop进行文件操作" class="headerlink" title="idea远程连接hadoop进行文件操作"></a>idea远程连接hadoop进行文件操作</h1><p>部署完高可用集群之后，尝试idea远程连接hadoop进行操作</p>
+<h2 id="配置windows中的hadoop环境"><a href="#配置windows中的hadoop环境" class="headerlink" title="配置windows中的hadoop环境"></a>配置windows中的hadoop环境</h2><ul>
+<li><p>下载hadoop2.6.5到windows中并放在一个纯英文目录下</p>
+</li>
+<li><p>配置环境变量，先系统变量中创建HADOOP_HOME</p>
+<p><img src="https://raw.githubusercontent.com/ThisisWilli/BigData/master/Hadoop/pic/%E5%88%9B%E5%BB%BAHADOOP_HOME.PNG" alt="https://raw.githubusercontent.com/ThisisWilli/BigData/master/Hadoop/pic/%E5%88%9B%E5%BB%BAHADOOP_HOME.PNG"></p>
+</li>
+<li><p>创建HADOOP_USER_NAME，名称为集群中的登录名称</p>
+<p><img src="https://raw.githubusercontent.com/ThisisWilli/BigData/master/Hadoop/pic/%E5%88%9B%E5%BB%BAHADOOP_USER_NAME.PNG" alt="https://raw.githubusercontent.com/ThisisWilli/BigData/master/Hadoop/pic/%E5%88%9B%E5%BB%BAHADOOP_USER_NAME.PNG"></p>
+</li>
+<li><p>在系统变量的Path中添加%HADOOP_HOME%/bin</p>
+</li>
+<li><p>将hadoop.dll添加到C:\Windows\System32文件夹下</p>
+</li>
+<li><p>在命令行中输入hdfs和hadoop，检测是否安装成功</p>
+<p><img src="https://raw.githubusercontent.com/ThisisWilli/BigData/master/Hadoop/pic/hadoop%E6%98%AF%E5%90%A6%E5%AE%89%E8%A3%85%E6%88%90%E5%8A%9F.PNG" alt="https://raw.githubusercontent.com/ThisisWilli/BigData/master/Hadoop/pic/hadoop%E6%98%AF%E5%90%A6%E5%AE%89%E8%A3%85%E6%88%90%E5%8A%9F.PNG"></p>
+</li>
+</ul>
+<h2 id="在idea中配置hadoop"><a href="#在idea中配置hadoop" class="headerlink" title="在idea中配置hadoop"></a>在idea中配置hadoop</h2><ul>
+<li><p>首先下载插件(再次感谢作者)<a href="https://github.com/fangyuzhong2016/HadoopIntellijPlugin，直接clone下来即可，注意项目中所要求的配置信息" target="_blank" rel="noopener">https://github.com/fangyuzhong2016/HadoopIntellijPlugin，直接clone下来即可，注意项目中所要求的配置信息</a></p>
+</li>
+<li><p>idea中创建maven项目</p>
+<p><img src="https://raw.githubusercontent.com/ThisisWilli/BigData/master/Hadoop/pic/%E5%88%9B%E5%BB%BAmaven%E5%B7%A5%E7%A8%8B.PNG" alt="https://raw.githubusercontent.com/ThisisWilli/BigData/master/Hadoop/pic/%E5%88%9B%E5%BB%BAmaven%E5%B7%A5%E7%A8%8B.PNG"></p>
+</li>
+<li><p>工程创建完成之后，File-&gt;Settings-Plugin-&gt;点击右上角的设置-&gt;Install plugin from disk</p>
+<p><img src="https://raw.githubusercontent.com/ThisisWilli/BigData/master/Hadoop/pic/%E5%AE%89%E8%A3%85plugins.PNG" alt="https://raw.githubusercontent.com/ThisisWilli/BigData/master/Hadoop/pic/%E5%AE%89%E8%A3%85plugins.PNG"></p>
+</li>
+<li><p>重启idea，菜单栏中会出现hadoop选项</p>
+</li>
+</ul>
+<h2 id="连接hadoop，进行文件操作"><a href="#连接hadoop，进行文件操作" class="headerlink" title="连接hadoop，进行文件操作"></a>连接hadoop，进行文件操作</h2><ul>
+<li><p>首先开启集群，先<code>zkServer.sh start</code>开启zookeeper，再<code>start-dfs.sh</code>开启全部节点，在配置节点前首先进入node01:50070查看node01和node02的状态。</p>
+</li>
+<li><p>点击idea上方菜单栏中的hadoop进入设置</p>
+<p><img src="https://raw.githubusercontent.com/ThisisWilli/BigData/master/Hadoop/pic/%E8%AE%BE%E7%BD%AEhadoop%E6%96%87%E4%BB%B6%E7%B3%BB%E7%BB%9F.PNG" alt="https://raw.githubusercontent.com/ThisisWilli/BigData/master/Hadoop/pic/%E8%AE%BE%E7%BD%AEhadoop%E6%96%87%E4%BB%B6%E7%B3%BB%E7%BB%9F.PNG"></p>
+</li>
+<li><p>确定之后左边会出现hadoop</p>
+<p><img src="https://raw.githubusercontent.com/ThisisWilli/BigData/master/Hadoop/pic/hadoop%E4%BE%A7%E8%BE%B9%E6%A0%8F.PNG" alt="https://raw.githubusercontent.com/ThisisWilli/BigData/master/Hadoop/pic/hadoop%E4%BE%A7%E8%BE%B9%E6%A0%8F.PNG"></p>
+</li>
+<li><p>进行文件操作，代码具体如下，可用junit进行调试，并在hadoop插件中查看hdfs文件系统</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="keyword">package</span> com.sxt.hdfs.test;</span><br><span class="line"></span><br><span class="line"><span class="keyword">import</span> org.apache.hadoop.conf.Configuration;</span><br><span class="line"><span class="keyword">import</span> org.apache.hadoop.conf.Configured;</span><br><span class="line"><span class="keyword">import</span> org.apache.hadoop.fs.*;</span><br><span class="line"><span class="keyword">import</span> org.apache.hadoop.io.IOUtils;</span><br><span class="line"><span class="keyword">import</span> org.junit.After;</span><br><span class="line"><span class="keyword">import</span> org.junit.Before;</span><br><span class="line"><span class="keyword">import</span> org.junit.Test;</span><br><span class="line"></span><br><span class="line"><span class="keyword">import</span> java.io.BufferedInputStream;</span><br><span class="line"><span class="keyword">import</span> java.io.FileInputStream;</span><br><span class="line"><span class="keyword">import</span> java.io.IOException;</span><br><span class="line"><span class="keyword">import</span> java.io.InputStream;</span><br><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment"> * \* Project: hadoop</span></span><br><span class="line"><span class="comment"> * \* Package: com.sxt.hdfs.test</span></span><br><span class="line"><span class="comment"> * \* Author: Hoodie_Willi</span></span><br><span class="line"><span class="comment"> * \* Date: 2019-07-29 20:36:22</span></span><br><span class="line"><span class="comment"> * \* Description:</span></span><br><span class="line"><span class="comment"> * \</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">test</span> </span>&#123;</span><br><span class="line">    Configuration conf = <span class="keyword">null</span>;</span><br><span class="line">    FileSystem fs = <span class="keyword">null</span>;</span><br><span class="line">    <span class="meta">@Before</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">conn</span><span class="params">()</span> <span class="keyword">throws</span> IOException </span>&#123;</span><br><span class="line">        conf = <span class="keyword">new</span> Configuration();</span><br><span class="line">        fs = FileSystem.get(conf);</span><br><span class="line">        <span class="comment">//System.out.println("success");</span></span><br><span class="line">    &#125;</span><br><span class="line">    <span class="meta">@Test</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">mkdir</span><span class="params">()</span> <span class="keyword">throws</span> IOException </span>&#123;</span><br><span class="line">        Path path = <span class="keyword">new</span> Path(<span class="string">"/mytemp"</span>);</span><br><span class="line">        <span class="keyword">if</span> (fs.exists(path))&#123;</span><br><span class="line">            fs.delete(path);</span><br><span class="line">        &#125;</span><br><span class="line">        fs.mkdirs(path);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="meta">@Test</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">uploadFile</span><span class="params">()</span> <span class="keyword">throws</span> IOException</span>&#123;</span><br><span class="line">        <span class="comment">//文件上传路径</span></span><br><span class="line">        Path path = <span class="keyword">new</span> Path(<span class="string">"/mytemp/haha.txt"</span>);</span><br><span class="line">        FSDataOutputStream fdos = fs.create(path);</span><br><span class="line">        <span class="comment">//获取磁盘文件</span></span><br><span class="line">        InputStream is = <span class="keyword">new</span> BufferedInputStream(<span class="keyword">new</span> FileInputStream(<span class="string">"D:\\IdeaProject\\hadoop\\src\\files\\hello.txt"</span>));</span><br><span class="line">        IOUtils.copyBytes(is, fdos, conf, <span class="keyword">true</span>);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="meta">@Test</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">readFile</span><span class="params">()</span> <span class="keyword">throws</span> IOException</span>&#123;</span><br><span class="line">        Path f = <span class="keyword">new</span> Path(<span class="string">"/user/root/test.txt"</span>);</span><br><span class="line">        FileStatus file = fs.getFileStatus(f);</span><br><span class="line"><span class="comment">//        BlockLocation[] blks = fs.getFileBlockLocations(file,0, file.getLen());</span></span><br><span class="line"><span class="comment">//        for (BlockLocation blk : blks)&#123;</span></span><br><span class="line"><span class="comment">//            System.out.println(blk);</span></span><br><span class="line"><span class="comment">//        &#125;</span></span><br><span class="line">        <span class="comment">//读取文件</span></span><br><span class="line">        FSDataInputStream fdis = fs.open(f); <span class="comment">// fileinputstream</span></span><br><span class="line">        fdis.seek(<span class="number">1048576</span>);</span><br><span class="line">        System.out.println((<span class="keyword">char</span>) fdis.readByte());</span><br><span class="line">        System.out.println((<span class="keyword">char</span>) fdis.readByte());</span><br><span class="line">        System.out.println((<span class="keyword">char</span>) fdis.readByte());</span><br><span class="line">        System.out.println((<span class="keyword">char</span>) fdis.readByte());</span><br><span class="line">        System.out.println((<span class="keyword">char</span>) fdis.readByte());</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="comment">//@After</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">close</span><span class="params">()</span> <span class="keyword">throws</span> IOException</span>&#123;</span><br><span class="line">        fs.close();</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+</li>
+</ul>
+]]></content>
+  </entry>
+  <entry>
     <title>Hello World</title>
     <url>/2020/02/26/hello-world/</url>
     <content><![CDATA[<p>Welcome to <a href="https://hexo.io/" target="_blank" rel="noopener">Hexo</a>! This is your very first post. Check <a href="https://hexo.io/docs/" target="_blank" rel="noopener">documentation</a> for more info. If you get any problems when using Hexo, you can find the answer in <a href="https://hexo.io/docs/troubleshooting.html" target="_blank" rel="noopener">troubleshooting</a> or you can ask me on <a href="https://github.com/hexojs/hexo/issues" target="_blank" rel="noopener">GitHub</a>.</p>
