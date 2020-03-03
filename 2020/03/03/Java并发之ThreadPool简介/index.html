@@ -20,27 +20,34 @@
     var CONFIG = {"hostname":"thisiswilli.cn","root":"/","scheme":"Gemini","version":"7.7.1","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":true},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
   </script>
 
-  <meta property="og:type" content="website">
-<meta property="og:title" content="ThisisWilli">
-<meta property="og:url" content="http://thisiswilli.cn/index.html">
+  <meta name="description" content="ThreadPool需要了解的相关接口或类首先，ThreadPool有关的接口或类的继承图如下  Executor顶级接口，调用实现了Runnable接口的命令 Executors的存在是为了避免开发者显式的去创建一个线程 1234567891011121314public interface Executor &amp;#123;    &#x2F;**     * Executes the given comm">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Java并发之ThreadPool简介">
+<meta property="og:url" content="http://thisiswilli.cn/2020/03/03/Java%E5%B9%B6%E5%8F%91%E4%B9%8BThreadPool%E7%AE%80%E4%BB%8B/index.html">
 <meta property="og:site_name" content="ThisisWilli">
+<meta property="og:description" content="ThreadPool需要了解的相关接口或类首先，ThreadPool有关的接口或类的继承图如下  Executor顶级接口，调用实现了Runnable接口的命令 Executors的存在是为了避免开发者显式的去创建一个线程 1234567891011121314public interface Executor &amp;#123;    &#x2F;**     * Executes the given comm">
 <meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://img2018.cnblogs.com/blog/1598493/201907/1598493-20190723112138598-2094415408.png">
+<meta property="article:published_time" content="2020-03-03T12:04:44.000Z">
+<meta property="article:modified_time" content="2020-03-03T12:08:12.582Z">
 <meta property="article:author" content="Willi">
+<meta property="article:tag" content="Java, 并发">
 <meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://img2018.cnblogs.com/blog/1598493/201907/1598493-20190723112138598-2094415408.png">
 
-<link rel="canonical" href="http://thisiswilli.cn/">
+<link rel="canonical" href="http://thisiswilli.cn/2020/03/03/Java%E5%B9%B6%E5%8F%91%E4%B9%8BThreadPool%E7%AE%80%E4%BB%8B/">
 
 
 <script id="page-configurations">
   // https://hexo.io/docs/variables.html
   CONFIG.page = {
     sidebar: "",
-    isHome: true,
-    isPost: false
+    isHome: false,
+    isPost: true
   };
 </script>
 
-  <title>ThisisWilli</title>
+  <title>Java并发之ThreadPool简介 | ThisisWilli</title>
   
 
 
@@ -192,10 +199,10 @@
             
 
   <div class="posts-expand">
-        
+      
   
   
-  <article itemscope itemtype="http://schema.org/Article" class="post-block home" lang="zh-CN">
+  <article itemscope itemtype="http://schema.org/Article" class="post-block " lang="zh-CN">
     <link itemprop="mainEntityOfPage" href="http://thisiswilli.cn/2020/03/03/Java%E5%B9%B6%E5%8F%91%E4%B9%8BThreadPool%E7%AE%80%E4%BB%8B/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -209,8 +216,7 @@
     </span>
       <header class="post-header">
         <h1 class="post-title" itemprop="name headline">
-          
-            <a href="/2020/03/03/Java%E5%B9%B6%E5%8F%91%E4%B9%8BThreadPool%E7%AE%80%E4%BB%8B/" class="post-title-link" itemprop="url">Java并发之ThreadPool简介</a>
+          Java并发之ThreadPool简介
         </h1>
 
         <div class="post-meta">
@@ -224,7 +230,14 @@
               <time title="创建时间：2020-03-03 20:04:44 / 修改时间：20:08:12" itemprop="dateCreated datePublished" datetime="2020-03-03T20:04:44+08:00">2020-03-03</time>
             </span>
 
-          <br>
+          
+            <span class="post-meta-item" title="阅读次数" id="busuanzi_container_page_pv" style="display: none;">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-eye"></i>
+              </span>
+              <span class="post-meta-item-text">阅读次数：</span>
+              <span id="busuanzi_value_page_pv"></span>
+            </span><br>
             <span class="post-meta-item" title="本文字数">
               <span class="post-meta-item-icon">
                 <i class="fa fa-file-word-o"></i>
@@ -249,7 +262,7 @@
     <div class="post-body" itemprop="articleBody">
 
       
-          <h1 id="ThreadPool"><a href="#ThreadPool" class="headerlink" title="ThreadPool"></a>ThreadPool</h1><h2 id="需要了解的相关接口或类"><a href="#需要了解的相关接口或类" class="headerlink" title="需要了解的相关接口或类"></a>需要了解的相关接口或类</h2><p>首先，ThreadPool有关的接口或类的继承图如下</p>
+        <h1 id="ThreadPool"><a href="#ThreadPool" class="headerlink" title="ThreadPool"></a>ThreadPool</h1><h2 id="需要了解的相关接口或类"><a href="#需要了解的相关接口或类" class="headerlink" title="需要了解的相关接口或类"></a>需要了解的相关接口或类</h2><p>首先，ThreadPool有关的接口或类的继承图如下</p>
 <p><img src="https://img2018.cnblogs.com/blog/1598493/201907/1598493-20190723112138598-2094415408.png" alt=""></p>
 <h3 id="Executor"><a href="#Executor" class="headerlink" title="Executor"></a>Executor</h3><p>顶级接口，调用实现了Runnable接口的命令</p>
 <p>Executors的存在是为了避免开发者显式的去创建一个线程</p>
@@ -324,223 +337,72 @@
 
 <p>输出结果为</p>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">单线程耗时3414ms 质数个数为2000000</span><br><span class="line">多线程耗时1133ms 质数个数为2000000</span><br></pre></td></tr></table></figure>
-      
     </div>
 
     
     
     
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
         
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block home" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="http://thisiswilli.cn/2020/02/26/Standalone%E6%A8%A1%E5%BC%8F%E6%90%AD%E5%BB%BA/">
 
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/xiaolang.jpeg">
-      <meta itemprop="name" content="Willi">
-      <meta itemprop="description" content="">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="ThisisWilli">
-    </span>
-      <header class="post-header">
-        <h1 class="post-title" itemprop="name headline">
-          
-            <a href="/2020/02/26/Standalone%E6%A8%A1%E5%BC%8F%E6%90%AD%E5%BB%BA/" class="post-title-link" itemprop="url">Standalone模式搭建</a>
-        </h1>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="fa fa-calendar-o"></i>
-              </span>
-              <span class="post-meta-item-text">发表于</span>
-              
-
-              <time title="创建时间：2020-02-26 21:01:49 / 修改时间：21:09:13" itemprop="dateCreated datePublished" datetime="2020-02-26T21:01:49+08:00">2020-02-26</time>
-            </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="fa fa-folder-o"></i>
-              </span>
-              <span class="post-meta-item-text">分类于</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/Spark/" itemprop="url" rel="index"><span itemprop="name">Spark</span></a>
-                </span>
-            </span>
-
-          <br>
-            <span class="post-meta-item" title="本文字数">
-              <span class="post-meta-item-icon">
-                <i class="fa fa-file-word-o"></i>
-              </span>
-                <span class="post-meta-item-text">本文字数：</span>
-              <span>2k</span>
-            </span>
-            <span class="post-meta-item" title="阅读时长">
-              <span class="post-meta-item-icon">
-                <i class="fa fa-clock-o"></i>
-              </span>
-                <span class="post-meta-item-text">阅读时长 &asymp;</span>
-              <span>2 分钟</span>
-            </span>
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h1 id="Spark-Standalone模式"><a href="#Spark-Standalone模式" class="headerlink" title="Spark Standalone模式"></a>Spark Standalone模式</h1><h2 id="准备工作"><a href="#准备工作" class="headerlink" title="准备工作"></a>准备工作</h2><h3 id="安装配置jdk8"><a href="#安装配置jdk8" class="headerlink" title="安装配置jdk8"></a>安装配置jdk8</h3><ul>
-<li><p>检查jdk版本</p>
-</li>
-<li><p>上传jdk8和Spark2.3.1到node01</p>
-</li>
-<li><p><code>[root@node01 software]# tar -zxvf ./jdk-8u181-linux-x64.tar.gz</code></p>
-</li>
-<li><p>删除jdk安装包<code>[root@node01 software]# rm -rf ./jdk-8u181-linux-x64.tar.gz</code></p>
-</li>
-<li><p>在node01上配置jdk，注意PATH必须放到export jdk前面，不然会导致还是识别老版本的jdk</p>
-</li>
+<div>
+<ul class="post-copyright">
+  <li class="post-copyright-author">
+    <strong>本文作者： </strong>Willi
+  </li>
+  <li class="post-copyright-link">
+    <strong>本文链接：</strong>
+    <a href="http://thisiswilli.cn/2020/03/03/Java%E5%B9%B6%E5%8F%91%E4%B9%8BThreadPool%E7%AE%80%E4%BB%8B/" title="Java并发之ThreadPool简介">http://thisiswilli.cn/2020/03/03/Java并发之ThreadPool简介/</a>
+  </li>
+  <li class="post-copyright-license">
+    <strong>版权声明： </strong>本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/zh-Hans" rel="noopener" target="_blank"><i class="fa fa-fw fa-creative-commons"></i>BY-NC-SA</a> 许可协议。转载请注明出处！
+  </li>
 </ul>
-          <!--noindex-->
-            <div class="post-button">
-              <a class="btn" href="/2020/02/26/Standalone%E6%A8%A1%E5%BC%8F%E6%90%AD%E5%BB%BA/#more" rel="contents">
-                阅读全文 &raquo;
-              </a>
-            </div>
-          <!--/noindex-->
+</div>
+
+      <div>
+      
         
       
-    </div>
+      </div>
 
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
+      <div>
         
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block home" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="http://thisiswilli.cn/2019/02/26/idea%E8%BF%9C%E7%A8%8B%E8%BF%9E%E6%8E%A5hadoop%E8%BF%9B%E8%A1%8C%E6%96%87%E4%BB%B6%E6%93%8D%E4%BD%9C/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/xiaolang.jpeg">
-      <meta itemprop="name" content="Willi">
-      <meta itemprop="description" content="">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="ThisisWilli">
-    </span>
-      <header class="post-header">
-        <h1 class="post-title" itemprop="name headline">
-          
-            <a href="/2019/02/26/idea%E8%BF%9C%E7%A8%8B%E8%BF%9E%E6%8E%A5hadoop%E8%BF%9B%E8%A1%8C%E6%96%87%E4%BB%B6%E6%93%8D%E4%BD%9C/" class="post-title-link" itemprop="url">idea远程连接hadoop进行文件操作</a>
-        </h1>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="fa fa-calendar-o"></i>
-              </span>
-              <span class="post-meta-item-text">发表于</span>
-
-              <time title="创建时间：2019-02-26 19:45:59" itemprop="dateCreated datePublished" datetime="2019-02-26T19:45:59+08:00">2019-02-26</time>
-            </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="fa fa-calendar-check-o"></i>
-                </span>
-                <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2020-02-26 21:00:48" itemprop="dateModified" datetime="2020-02-26T21:00:48+08:00">2020-02-26</time>
-              </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="fa fa-folder-o"></i>
-              </span>
-              <span class="post-meta-item-text">分类于</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/Hadoop/" itemprop="url" rel="index"><span itemprop="name">Hadoop</span></a>
-                </span>
-            </span>
-
-          <br>
-            <span class="post-meta-item" title="本文字数">
-              <span class="post-meta-item-icon">
-                <i class="fa fa-file-word-o"></i>
-              </span>
-                <span class="post-meta-item-text">本文字数：</span>
-              <span>2.5k</span>
-            </span>
-            <span class="post-meta-item" title="阅读时长">
-              <span class="post-meta-item-icon">
-                <i class="fa fa-clock-o"></i>
-              </span>
-                <span class="post-meta-item-text">阅读时长 &asymp;</span>
-              <span>2 分钟</span>
-            </span>
-
+        <div>
+    
+        <div style="text-align:center;color: #ccc;font-size:14px;">
+            -------------本文结束
+            <i class="fa fa-paw"></i>
+            感谢您的阅读-------------
         </div>
-      </header>
+    
+</div>
 
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h1 id="idea远程连接hadoop进行文件操作"><a href="#idea远程连接hadoop进行文件操作" class="headerlink" title="idea远程连接hadoop进行文件操作"></a>idea远程连接hadoop进行文件操作</h1><p>部署完高可用集群之后，尝试idea远程连接hadoop进行操作</p>
-<h2 id="配置windows中的hadoop环境"><a href="#配置windows中的hadoop环境" class="headerlink" title="配置windows中的hadoop环境"></a>配置windows中的hadoop环境</h2><ul>
-<li><p>下载hadoop2.6.5到windows中并放在一个纯英文目录下</p>
-</li>
-<li><p>配置环境变量，先系统变量中创建HADOOP_HOME</p>
-          <!--noindex-->
-            <div class="post-button">
-              <a class="btn" href="/2019/02/26/idea%E8%BF%9C%E7%A8%8B%E8%BF%9E%E6%8E%A5hadoop%E8%BF%9B%E8%A1%8C%E6%96%87%E4%BB%B6%E6%93%8D%E4%BD%9C/#more" rel="contents">
-                阅读全文 &raquo;
-              </a>
-            </div>
-          <!--/noindex-->
         
-      
-    </div>
-
-    
-    
-    
+      </div>
       <footer class="post-footer">
-        <div class="post-eof"></div>
+          <div class="post-tags">
+              <a href="/tags/Java-%E5%B9%B6%E5%8F%91/" rel="tag"># Java, 并发</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2020/02/26/Standalone%E6%A8%A1%E5%BC%8F%E6%90%AD%E5%BB%BA/" rel="prev" title="Standalone模式搭建">
+      <i class="fa fa-chevron-left"></i> Standalone模式搭建
+    </a></div>
+      <div class="post-nav-item"></div>
+    </div>
       </footer>
+    
   </article>
   
   
   
 
   </div>
-
-  
-
 
 
           </div>
@@ -591,6 +453,7 @@
 
       <!--noindex-->
       <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#ThreadPool"><span class="nav-number">1.</span> <span class="nav-text">ThreadPool</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#需要了解的相关接口或类"><span class="nav-number">1.1.</span> <span class="nav-text">需要了解的相关接口或类</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#Executor"><span class="nav-number">1.1.1.</span> <span class="nav-text">Executor</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#ExecutorService"><span class="nav-number">1.1.2.</span> <span class="nav-text">ExecutorService</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Executors"><span class="nav-number">1.1.3.</span> <span class="nav-text">Executors</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Callable"><span class="nav-number">1.1.4.</span> <span class="nav-text">Callable</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Future"><span class="nav-number">1.1.5.</span> <span class="nav-text">Future</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#多种线程池"><span class="nav-number">1.2.</span> <span class="nav-text">多种线程池</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#FixedThreadPool"><span class="nav-number">1.2.1.</span> <span class="nav-text">FixedThreadPool</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#CachedThreadPool"><span class="nav-number">1.2.2.</span> <span class="nav-text">CachedThreadPool</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#SingleThreadExecutor"><span class="nav-number">1.2.3.</span> <span class="nav-text">SingleThreadExecutor</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#ScheduledThreadPool"><span class="nav-number">1.2.4.</span> <span class="nav-text">ScheduledThreadPool</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#WorkStealingPool"><span class="nav-number">1.2.5.</span> <span class="nav-text">WorkStealingPool</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#线程池的应用"><span class="nav-number">1.3.</span> <span class="nav-text">线程池的应用</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#利用线程池进行并行计算"><span class="nav-number">1.3.1.</span> <span class="nav-text">利用线程池进行并行计算</span></a></li></ol></li></ol></li></ol></div>
       </div>
       <!--/noindex-->
 
