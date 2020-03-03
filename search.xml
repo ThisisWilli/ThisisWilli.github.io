@@ -5,6 +5,7 @@
     <url>/2020/03/03/Java%E5%B9%B6%E5%8F%91%E4%B9%8BThreadPool%E7%AE%80%E4%BB%8B/</url>
     <content><![CDATA[<h1 id="ThreadPool"><a href="#ThreadPool" class="headerlink" title="ThreadPool"></a>ThreadPool</h1><h2 id="需要了解的相关接口或类"><a href="#需要了解的相关接口或类" class="headerlink" title="需要了解的相关接口或类"></a>需要了解的相关接口或类</h2><p>首先，ThreadPool有关的接口或类的继承图如下</p>
 <a id="more"></a>
+
 <p><img src="https://img2018.cnblogs.com/blog/1598493/201907/1598493-20190723112138598-2094415408.png" alt=""></p>
 <h3 id="Executor"><a href="#Executor" class="headerlink" title="Executor"></a>Executor</h3><p>顶级接口，调用实现了Runnable接口的命令</p>
 <p>Executors的存在是为了避免开发者显式的去创建一个线程</p>
@@ -17,7 +18,8 @@
 <h3 id="ExecutorService"><a href="#ExecutorService" class="headerlink" title="ExecutorService"></a>ExecutorService</h3><pre><code>该接口继承自Executor接口，扩展了Executor接口，添加了shutdown、shutdownAll、submit、invokeAll等一系列对线程的操作方法，该接口比较重要，在使用线程池框架的时候，经常用到该接口。</code></pre><h3 id="Executors"><a href="#Executors" class="headerlink" title="Executors"></a>Executors</h3><p>线程池的工厂类，用工厂方法初始化各种线程池，一下为部分源码</p>
 <figure class="highlight java"><table><tr><td class="code"><pre><span class="line"> * <span class="meta">@param</span> nThreads the number of threads in the pool</span><br><span class="line"> * <span class="meta">@return</span> the newly created thread pool</span><br><span class="line"> * <span class="meta">@throws</span> IllegalArgumentException <span class="keyword">if</span> &#123;<span class="meta">@code</span> nThreads &lt;= <span class="number">0</span>&#125;</span><br><span class="line"> */</span><br><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">static</span> ExecutorService <span class="title">newFixedThreadPool</span><span class="params">(<span class="keyword">int</span> nThreads)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">return</span> <span class="keyword">new</span> ThreadPoolExecutor(nThreads, nThreads,</span><br><span class="line">                                  <span class="number">0L</span>, TimeUnit.MILLISECONDS,</span><br><span class="line">                                  <span class="keyword">new</span> LinkedBlockingQueue&lt;Runnable&gt;());</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">* creates a <span class="keyword">new</span> thread</span><br><span class="line"> * <span class="meta">@return</span> a newly created scheduled thread pool</span><br><span class="line"> * <span class="meta">@throws</span> IllegalArgumentException <span class="keyword">if</span> &#123;<span class="meta">@code</span> corePoolSize &lt; <span class="number">0</span>&#125;</span><br><span class="line"> * <span class="meta">@throws</span> NullPointerException <span class="keyword">if</span> threadFactory is <span class="keyword">null</span></span><br><span class="line"> */</span><br><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">static</span> ScheduledExecutorService <span class="title">newScheduledThreadPool</span><span class="params">(</span></span></span><br><span class="line"><span class="function"><span class="params">        <span class="keyword">int</span> corePoolSize, ThreadFactory threadFactory)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">return</span> <span class="keyword">new</span> ScheduledThreadPoolExecutor(corePoolSize, threadFactory);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 
-<h3 id="Callable"><a href="#Callable" class="headerlink" title="Callable"></a>Callable</h3><pre><code>Callable接口与Runnable接口类似，实现了Callable接口与Runnable接口的类都是可以被其他线程执行的任务。但是Callable与Runnable有几点不同：</code></pre><ul>
+<h3 id="Callable"><a href="#Callable" class="headerlink" title="Callable"></a>Callable</h3><p>Callable接口与Runnable接口类似，实现了Callable接口与Runnable接口的类都是可以被其他线程执行的任务。但是Callable与Runnable有几点不同：</p>
+<ul>
 <li>Callable规定的方法是call()，而Runnable规定的方法是run()。</li>
 <li>Callable的任务执行后可返回值，  运行Callable的方法可返回一个Future对象，Future表示这个线程的执行结果。而Runnable的任务是不能返回值的。</li>
 <li>call()方法可抛出异常，而run()方法是不能抛出异常的。</li>
@@ -79,6 +81,9 @@
 
 <p>输出结果为</p>
 <figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">单线程耗时3414ms 质数个数为2000000</span><br><span class="line">多线程耗时1133ms 质数个数为2000000</span><br></pre></td></tr></table></figure>]]></content>
+      <categories>
+        <category>Java并发</category>
+      </categories>
       <tags>
         <tag>并发</tag>
       </tags>

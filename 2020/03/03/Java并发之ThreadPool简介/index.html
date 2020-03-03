@@ -29,7 +29,7 @@
 <meta property="og:locale" content="zh_CN">
 <meta property="og:image" content="https://img2018.cnblogs.com/blog/1598493/201907/1598493-20190723112138598-2094415408.png">
 <meta property="article:published_time" content="2020-03-03T12:04:44.000Z">
-<meta property="article:modified_time" content="2020-03-03T12:15:51.651Z">
+<meta property="article:modified_time" content="2020-03-03T12:54:27.173Z">
 <meta property="article:author" content="Willi">
 <meta property="article:tag" content="并发">
 <meta name="twitter:card" content="summary">
@@ -144,7 +144,7 @@
   </li>
         <li class="menu-item menu-item-categories">
 
-    <a href="/categories/" rel="section"><i class="fa fa-fw fa-th"></i>分类<span class="badge">2</span></a>
+    <a href="/categories/" rel="section"><i class="fa fa-fw fa-th"></i>分类<span class="badge">3</span></a>
 
   </li>
         <li class="menu-item menu-item-archives">
@@ -227,7 +227,16 @@
               <span class="post-meta-item-text">发表于</span>
               
 
-              <time title="创建时间：2020-03-03 20:04:44 / 修改时间：20:15:51" itemprop="dateCreated datePublished" datetime="2020-03-03T20:04:44+08:00">2020-03-03</time>
+              <time title="创建时间：2020-03-03 20:04:44 / 修改时间：20:54:27" itemprop="dateCreated datePublished" datetime="2020-03-03T20:04:44+08:00">2020-03-03</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Java%E5%B9%B6%E5%8F%91/" itemprop="url" rel="index"><span itemprop="name">Java并发</span></a>
+                </span>
             </span>
 
           
@@ -264,6 +273,7 @@
       
         <h1 id="ThreadPool"><a href="#ThreadPool" class="headerlink" title="ThreadPool"></a>ThreadPool</h1><h2 id="需要了解的相关接口或类"><a href="#需要了解的相关接口或类" class="headerlink" title="需要了解的相关接口或类"></a>需要了解的相关接口或类</h2><p>首先，ThreadPool有关的接口或类的继承图如下</p>
 <a id="more"></a>
+
 <p><img src="https://img2018.cnblogs.com/blog/1598493/201907/1598493-20190723112138598-2094415408.png" alt=""></p>
 <h3 id="Executor"><a href="#Executor" class="headerlink" title="Executor"></a>Executor</h3><p>顶级接口，调用实现了Runnable接口的命令</p>
 <p>Executors的存在是为了避免开发者显式的去创建一个线程</p>
@@ -276,7 +286,8 @@
 <h3 id="ExecutorService"><a href="#ExecutorService" class="headerlink" title="ExecutorService"></a>ExecutorService</h3><pre><code>该接口继承自Executor接口，扩展了Executor接口，添加了shutdown、shutdownAll、submit、invokeAll等一系列对线程的操作方法，该接口比较重要，在使用线程池框架的时候，经常用到该接口。</code></pre><h3 id="Executors"><a href="#Executors" class="headerlink" title="Executors"></a>Executors</h3><p>线程池的工厂类，用工厂方法初始化各种线程池，一下为部分源码</p>
 <figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line"> * <span class="meta">@param</span> nThreads the number of threads in the pool</span><br><span class="line"> * <span class="meta">@return</span> the newly created thread pool</span><br><span class="line"> * <span class="meta">@throws</span> IllegalArgumentException <span class="keyword">if</span> &#123;<span class="meta">@code</span> nThreads &lt;= <span class="number">0</span>&#125;</span><br><span class="line"> */</span><br><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">static</span> ExecutorService <span class="title">newFixedThreadPool</span><span class="params">(<span class="keyword">int</span> nThreads)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">return</span> <span class="keyword">new</span> ThreadPoolExecutor(nThreads, nThreads,</span><br><span class="line">                                  <span class="number">0L</span>, TimeUnit.MILLISECONDS,</span><br><span class="line">                                  <span class="keyword">new</span> LinkedBlockingQueue&lt;Runnable&gt;());</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">* creates a <span class="keyword">new</span> thread</span><br><span class="line"> * <span class="meta">@return</span> a newly created scheduled thread pool</span><br><span class="line"> * <span class="meta">@throws</span> IllegalArgumentException <span class="keyword">if</span> &#123;<span class="meta">@code</span> corePoolSize &lt; <span class="number">0</span>&#125;</span><br><span class="line"> * <span class="meta">@throws</span> NullPointerException <span class="keyword">if</span> threadFactory is <span class="keyword">null</span></span><br><span class="line"> */</span><br><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">static</span> ScheduledExecutorService <span class="title">newScheduledThreadPool</span><span class="params">(</span></span></span><br><span class="line"><span class="function"><span class="params">        <span class="keyword">int</span> corePoolSize, ThreadFactory threadFactory)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">return</span> <span class="keyword">new</span> ScheduledThreadPoolExecutor(corePoolSize, threadFactory);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 
-<h3 id="Callable"><a href="#Callable" class="headerlink" title="Callable"></a>Callable</h3><pre><code>Callable接口与Runnable接口类似，实现了Callable接口与Runnable接口的类都是可以被其他线程执行的任务。但是Callable与Runnable有几点不同：</code></pre><ul>
+<h3 id="Callable"><a href="#Callable" class="headerlink" title="Callable"></a>Callable</h3><p>Callable接口与Runnable接口类似，实现了Callable接口与Runnable接口的类都是可以被其他线程执行的任务。但是Callable与Runnable有几点不同：</p>
+<ul>
 <li>Callable规定的方法是call()，而Runnable规定的方法是run()。</li>
 <li>Callable的任务执行后可返回值，  运行Callable的方法可返回一个Future对象，Future表示这个线程的执行结果。而Runnable的任务是不能返回值的。</li>
 <li>call()方法可抛出异常，而run()方法是不能抛出异常的。</li>
@@ -477,7 +488,7 @@
       <div class="site-state-item site-state-categories">
             <a href="/categories/">
           
-        <span class="site-state-item-count">2</span>
+        <span class="site-state-item-count">3</span>
         <span class="site-state-item-name">分类</span></a>
       </div>
       <div class="site-state-item site-state-tags">
