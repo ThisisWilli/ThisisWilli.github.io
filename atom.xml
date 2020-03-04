@@ -5,9 +5,9 @@
   <subtitle>玉不琢，不成器</subtitle>
   <link href="/atom.xml" rel="self"/>
   
-  <link href="http://thisiswilli.cn/"/>
+  <link href="https://thisiswilli.cn/"/>
   <updated>2020-03-04T12:03:17.296Z</updated>
-  <id>http://thisiswilli.cn/</id>
+  <id>https://thisiswilli.cn/</id>
   
   <author>
     <name>Willi</name>
@@ -18,8 +18,8 @@
   
   <entry>
     <title>Java并发之ThreadPool简介</title>
-    <link href="http://thisiswilli.cn/2020/03/03/Java%E5%B9%B6%E5%8F%91%E4%B9%8BThreadPool%E7%AE%80%E4%BB%8B/"/>
-    <id>http://thisiswilli.cn/2020/03/03/Java%E5%B9%B6%E5%8F%91%E4%B9%8BThreadPool%E7%AE%80%E4%BB%8B/</id>
+    <link href="https://thisiswilli.cn/2020/03/03/Java%E5%B9%B6%E5%8F%91%E4%B9%8BThreadPool%E7%AE%80%E4%BB%8B/"/>
+    <id>https://thisiswilli.cn/2020/03/03/Java%E5%B9%B6%E5%8F%91%E4%B9%8BThreadPool%E7%AE%80%E4%BB%8B/</id>
     <published>2020-03-03T12:04:44.000Z</published>
     <updated>2020-03-04T12:03:17.296Z</updated>
     
@@ -32,17 +32,17 @@
     </summary>
     
     
-      <category term="Java并发" scheme="http://thisiswilli.cn/categories/Java%E5%B9%B6%E5%8F%91/"/>
+      <category term="Java并发" scheme="https://thisiswilli.cn/categories/Java%E5%B9%B6%E5%8F%91/"/>
     
     
-      <category term="并发" scheme="http://thisiswilli.cn/tags/%E5%B9%B6%E5%8F%91/"/>
+      <category term="并发" scheme="https://thisiswilli.cn/tags/%E5%B9%B6%E5%8F%91/"/>
     
   </entry>
   
   <entry>
     <title>Standalone模式搭建</title>
-    <link href="http://thisiswilli.cn/2020/02/26/Standalone%E6%A8%A1%E5%BC%8F%E6%90%AD%E5%BB%BA/"/>
-    <id>http://thisiswilli.cn/2020/02/26/Standalone%E6%A8%A1%E5%BC%8F%E6%90%AD%E5%BB%BA/</id>
+    <link href="https://thisiswilli.cn/2020/02/26/Standalone%E6%A8%A1%E5%BC%8F%E6%90%AD%E5%BB%BA/"/>
+    <id>https://thisiswilli.cn/2020/02/26/Standalone%E6%A8%A1%E5%BC%8F%E6%90%AD%E5%BB%BA/</id>
     <published>2020-02-26T13:01:49.000Z</published>
     <updated>2020-02-26T13:09:13.197Z</updated>
     
@@ -66,17 +66,17 @@
     </summary>
     
     
-      <category term="Spark" scheme="http://thisiswilli.cn/categories/Spark/"/>
+      <category term="Spark" scheme="https://thisiswilli.cn/categories/Spark/"/>
     
     
-      <category term="Spark" scheme="http://thisiswilli.cn/tags/Spark/"/>
+      <category term="Spark" scheme="https://thisiswilli.cn/tags/Spark/"/>
     
   </entry>
   
   <entry>
     <title>idea远程连接hadoop进行文件操作</title>
-    <link href="http://thisiswilli.cn/2019/02/26/idea%E8%BF%9C%E7%A8%8B%E8%BF%9E%E6%8E%A5hadoop%E8%BF%9B%E8%A1%8C%E6%96%87%E4%BB%B6%E6%93%8D%E4%BD%9C/"/>
-    <id>http://thisiswilli.cn/2019/02/26/idea%E8%BF%9C%E7%A8%8B%E8%BF%9E%E6%8E%A5hadoop%E8%BF%9B%E8%A1%8C%E6%96%87%E4%BB%B6%E6%93%8D%E4%BD%9C/</id>
+    <link href="https://thisiswilli.cn/2019/02/26/idea%E8%BF%9C%E7%A8%8B%E8%BF%9E%E6%8E%A5hadoop%E8%BF%9B%E8%A1%8C%E6%96%87%E4%BB%B6%E6%93%8D%E4%BD%9C/"/>
+    <id>https://thisiswilli.cn/2019/02/26/idea%E8%BF%9C%E7%A8%8B%E8%BF%9E%E6%8E%A5hadoop%E8%BF%9B%E8%A1%8C%E6%96%87%E4%BB%B6%E6%93%8D%E4%BD%9C/</id>
     <published>2019-02-26T11:45:59.000Z</published>
     <updated>2020-02-26T13:00:48.806Z</updated>
     
@@ -93,10 +93,10 @@
     </summary>
     
     
-      <category term="Hadoop" scheme="http://thisiswilli.cn/categories/Hadoop/"/>
+      <category term="Hadoop" scheme="https://thisiswilli.cn/categories/Hadoop/"/>
     
     
-      <category term="Hadoop" scheme="http://thisiswilli.cn/tags/Hadoop/"/>
+      <category term="Hadoop" scheme="https://thisiswilli.cn/tags/Hadoop/"/>
     
   </entry>
   
