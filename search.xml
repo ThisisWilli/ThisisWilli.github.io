@@ -5,6 +5,7 @@
     <url>/2020/03/10/%E8%AE%BE%E8%AE%A1%E6%A8%A1%E5%BC%8F%E4%B9%8B%E5%8D%95%E4%BE%8B%E6%A8%A1%E5%BC%8F/</url>
     <content><![CDATA[<h2 id="单例模式"><a href="#单例模式" class="headerlink" title="单例模式"></a>单例模式</h2><p>​        在单例模式使得一个类的对象成为该类所在系统的唯一实例，单例模式适合用于需要重复创建的类，比如配置文件类。单例模式能够减少系统内存开销，降低GC压力。</p>
 <a id="more"></a>
+
 <h3 id="单例模式的实现方式"><a href="#单例模式的实现方式" class="headerlink" title="单例模式的实现方式"></a>单例模式的实现方式</h3><h4 id="饿汉式"><a href="#饿汉式" class="headerlink" title="饿汉式"></a>饿汉式</h4><p>饿汉式有以下几点特点</p>
 <ul>
 <li>在类加载时就创建对象，即在类中将对象定义成static类型的类变量，跟随类一起加载，这种方式类似于<strong>空间换时间</strong></li>
@@ -56,7 +57,8 @@
         <category>设计模式</category>
       </categories>
       <tags>
-        <tag>[object Object]</tag>
+        <tag>Java</tag>
+        <tag>设计模式</tag>
       </tags>
   </entry>
   <entry>
@@ -197,7 +199,8 @@
         <category>设计模式</category>
       </categories>
       <tags>
-        <tag>[object Object]</tag>
+        <tag>Java</tag>
+        <tag>设计模式</tag>
       </tags>
   </entry>
   <entry>
