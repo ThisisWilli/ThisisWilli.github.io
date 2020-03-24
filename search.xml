@@ -586,12 +586,7 @@ Java6中引入了偏向锁来做进一步优化：**只有第一次使用CAS将�
 <li>调用构造器创建对象–b</li>
 <li>返回地址给对象引用–c</li>
 </ul>
-<p>指令重排序之后可能会出现a-&gt;c-&gt;b的执行顺序，线程一执行了重排序之后的代码返回了，对象地址的引用到主内存中，线程一释放了锁，但是线程二拿到锁之后，直接判定lazyModeDCL对象不为空，那么线程二拿到的很可能是还在初始化的一个对象。</p>
-<p>Ps：但是有一种说法是，执行synchronized代码块中代码会等对象创建完之后再释放锁，所以上面的说法有不成立了。。。先留一个坑，等研究透synchronized再来填坑！</p>
-<p><img src="https://pic1.zhimg.com/50/v2-99efda8df0ea883f1be403311eb4d824_hd.jpg" alt=""></p>
-</li>
-<li><p>保证可见性</p>
-<p>如果线程一在自己的工作内存中创建了LazyModeDCL实例，释放了锁，但是还没有将结果同步到主内存中，这样会导致线程二在拿到了锁之后又创建了一个对象，如果使用volatile，就能让线程二中LazyModeDCL的缓存行失效，重新去主存中读取数据</p>
+<p>​      指令重排序之后可能会出现a-&gt;c-&gt;b的执行顺序，<strong>而synchronized只能保护代码块中的lazyModeDCL的原子性，而if判断语句在monitor的控制之外，别的线程可以越过monitor执行if语句读取lazyModeDCL这个变量</strong>，假设线程一拿到了锁，并执行了指令重排序后的代码，线程二在线程一运行的过程中可以执行if语句，虽然lazyModeDCL不为空，但是这是一个还没初始化完的对象，线程二可能直接返回一个没有创建完的对象，这也是我们不希望看到的，<strong>所以synchronized只保证了代码的有序性，但是变量的赋值操作依旧可以被编译器优化，此时会发生指令重排序</strong>，所以必须要加入volatile来保证代码不会被指令重排序，或者像第一种方法一样，直接用synchronized修饰方法，这样即使被指令重排序，但是别的线程还是不能去执行if语句，还是线程安全的</p>
 </li>
 </ul>
 <figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">LazyModeDCL</span> </span>&#123;</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">volatile</span> <span class="keyword">static</span> LazyModeDCL lazyModeDCL;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">private</span> <span class="title">LazyModeDCL</span><span class="params">()</span> </span>&#123;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> LazyModeDCL <span class="title">getInstance</span><span class="params">()</span></span>&#123;</span><br><span class="line">        <span class="keyword">if</span> (lazyModeDCL == <span class="keyword">null</span>)&#123;</span><br><span class="line">            <span class="keyword">synchronized</span> (LazyModeDCL<span class="class">.<span class="keyword">class</span>)</span>&#123;</span><br><span class="line">                <span class="keyword">if</span> (lazyModeDCL == <span class="keyword">null</span>)&#123;</span><br><span class="line">                    lazyModeDCL = <span class="keyword">new</span> LazyModeDCL();</span><br><span class="line">                &#125;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">return</span> lazyModeDCL;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
