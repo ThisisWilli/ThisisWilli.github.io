@@ -1,6 +1,86 @@
 <?xml version="1.0" encoding="utf-8"?>
 <search>
   <entry>
+    <title>设计模式之代理模式</title>
+    <url>/2020/04/21/%E8%AE%BE%E8%AE%A1%E6%A8%A1%E5%BC%8F%E4%B9%8B%E4%BB%A3%E7%90%86%E6%A8%A1%E5%BC%8F/</url>
+    <content><![CDATA[<h2 id="代理模式"><a href="#代理模式" class="headerlink" title="代理模式"></a>代理模式</h2><h3 id="代理模式是什么"><a href="#代理模式是什么" class="headerlink" title="代理模式是什么"></a>代理模式是什么</h3><pre><code>代理模式属于结构型设计模式，就好比日常生活中，你经常委托别人帮你办一些事情，比如让室友帮忙拿一下快递，或者带一餐饭，又或者是让房租中介帮你去寻找毕业工作所需要的租住的房子。在日常开发中，也会存在这样的场景，我们需要调用一些方法，但我们并不想了解其中详细的原理，只想通过一个中间对象来帮我们处理这些事情，那么就需要使用代理模式。</code></pre><h3 id="代理模式分类及实现"><a href="#代理模式分类及实现" class="headerlink" title="代理模式分类及实现"></a>代理模式分类及实现</h3><pre><code>我们以买基金为例，小狼身上有很多闲钱，想要通过投资来钱生钱，但是股市风险较大，并且小狼的金融知识也十分匮乏，所以小狼就通过买股票型基金的方式来投资，购买股票型基金，就是通过让比你更专业，更懂得玩钱的基金经理来帮你购买股票，这种方式就可以抽象为代理模式。</code></pre><h4 id="静态代理"><a href="#静态代理" class="headerlink" title="静态代理"></a>静态代理</h4><p>静态代理中包括以下几个角色：</p>
+<ul>
+<li><p>抽象角色：一般采用接口或者抽象类解决，在这个例子中可以抽象为<strong>买卖基金这些交易行为</strong></p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">interface</span> <span class="title">Transcation</span> </span>&#123;</span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">buy</span><span class="params">()</span></span>;</span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">sell</span><span class="params">()</span></span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>真实角色：需要实现抽象角色接口，并实现具体的业务逻辑，是真正要被代理的具体类，它供代理角色调用，在这个例子中可以理解为<strong>各种基金</strong>，这些基金被专门的基金经理购买</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">Fund</span> <span class="keyword">implements</span> <span class="title">Transcation</span></span>&#123;</span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">buy</span><span class="params">()</span> </span>&#123;</span><br><span class="line">        System.out.println(<span class="string">"买基金"</span>);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">sell</span><span class="params">()</span> </span>&#123;</span><br><span class="line">        System.out.println(<span class="string">"卖基金"</span>);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>代理角色：代理真实角色，代理真实角色之后，会做一些附属操作，在这个例子中可以理解为<strong>基金经理</strong>，而基金经理在执行代理操作时，往往会包括一些前续操作</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">FundManager</span> <span class="keyword">implements</span> <span class="title">Transcation</span> </span>&#123;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">private</span> Fund fund;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="title">FundManager</span><span class="params">(Fund fund)</span> </span>&#123;</span><br><span class="line">        <span class="keyword">this</span>.fund = fund;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">buy</span><span class="params">()</span> </span>&#123;</span><br><span class="line">        searchBuy();</span><br><span class="line">        fund.buy();</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">sell</span><span class="params">()</span> </span>&#123;</span><br><span class="line">        searchSell();</span><br><span class="line">        fund.sell();</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">searchBuy</span><span class="params">()</span></span>&#123;</span><br><span class="line">        System.out.println(<span class="string">"寻找潜力高的股票"</span>);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">searchSell</span><span class="params">()</span></span>&#123;</span><br><span class="line">        System.out.println(<span class="string">"预估哪些股票会跌"</span>);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>客户 ：访问代理角色的人，在这个例子中就是投资市场中的散户。</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">Client</span> </span>&#123;</span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">main</span><span class="params">(String[] args)</span> </span>&#123;</span><br><span class="line">        Fund fund = <span class="keyword">new</span> Fund();</span><br><span class="line">        FundManager manager = <span class="keyword">new</span> FundManager(fund);</span><br><span class="line">        manager.buy();</span><br><span class="line">        manager.sell();</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>运行结果为</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">寻找潜力高的股票</span><br><span class="line">买基金</span><br><span class="line">预估哪些股票会跌</span><br><span class="line">卖基金</span><br></pre></td></tr></table></figure>
+
+</li>
+</ul>
+<p>静态代理的优点</p>
+<ul>
+<li>实现了业务的分工，解耦了代码逻辑</li>
+<li><strong>可以在在不改动原有代码上增加新功能</strong></li>
+</ul>
+<p>静态代理的缺点</p>
+<ul>
+<li>一个角色就会产生一个代理，随着需要代理的业务越多，代码量会翻倍</li>
+</ul>
+<h4 id="动态代理"><a href="#动态代理" class="headerlink" title="动态代理"></a>动态代理</h4><pre><code>在静态代理的场景下接着思考，如果小狼觉得买股票型基金风险太大，他还是偏向于买稳定的混合型基金，那么股票型基金经理不能完成这种代理，如果还是依照静态代理，那么我们还要定义一个混合型基金的接口，并新建一个混合型基金的代理类，那么随着代码复杂度的增加，就很难维护这么多代理类和被代理类，那么我们就需要动态代理，当我们需要频繁切换代理类形式，动态代理能够通过一个代理类来代理N多个被代理类，动态代理在切换接口时，不需要重新定义代理类，应为动态代理不需要根据接口提前定义代理类，他把代理类的创建推迟到到代码运行时**通过反射来创建**</code></pre><ul>
+<li><p>动态代理和静态代理角色一样</p>
+</li>
+<li><p>动态代理的代理类是动态生成的，不是直接写好的，即不同股票的基金经理是在代码执行过程中，通过反射创建</p>
+</li>
+<li><p>动态代理分为两大类：基于接口的动态代理，基于类的动态代理</p>
+<ul>
+<li><p>基于接口–jdk动态代理</p>
+</li>
+<li><p>基于类：cglib</p>
+</li>
+<li><p>java字节码实现：javasist</p>
+<pre><code>静态代理和动态代理的区别为，静态代理在运行之前，JVM会读取代理类的.class文件，而动态代理是在代码运行时才动态生成代理类。</code></pre></li>
+</ul>
+</li>
+</ul>
+<p>动态代理的实现如下</p>
+<ul>
+<li><p>实现混合型基金和股票型基金的操作接口</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">interface</span> <span class="title">MixTranscation</span> </span>&#123;</span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">sell</span><span class="params">()</span></span>;</span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">buy</span><span class="params">()</span></span>;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">interface</span> <span class="title">StackTranscation</span> </span>&#123;</span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">sell</span><span class="params">()</span></span>;</span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">buy</span><span class="params">()</span></span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>实现两个基金类</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">StackFund</span> <span class="keyword">implements</span> <span class="title">StackTranscation</span> </span>&#123;</span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">sell</span><span class="params">()</span> </span>&#123;</span><br><span class="line">        System.out.println(<span class="string">"抛售股票型基金"</span>);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">buy</span><span class="params">()</span> </span>&#123;</span><br><span class="line">        System.out.println(<span class="string">"购买股票型基金"</span>);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">MixFund</span> <span class="keyword">implements</span> <span class="title">MixTranscation</span> </span>&#123;</span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">sell</span><span class="params">()</span> </span>&#123;</span><br><span class="line">        System.out.println(<span class="string">"抛售混合型基金"</span>);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">buy</span><span class="params">()</span> </span>&#123;</span><br><span class="line">        System.out.println(<span class="string">"购买混合型基金"</span>);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>定义一个类专门来生成代理类</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">ProxyInvocationHandler</span> <span class="keyword">implements</span> <span class="title">InvocationHandler</span> </span>&#123;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 被代理的接口</span></span><br><span class="line">    <span class="keyword">private</span> Object target;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">setTarget</span><span class="params">(Object target)</span> </span>&#123;</span><br><span class="line">        <span class="keyword">this</span>.target = target;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="title">ProxyInvocationHandler</span><span class="params">()</span> </span>&#123;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 生成得到代理类</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> Object <span class="title">getProxy</span><span class="params">()</span></span>&#123;</span><br><span class="line">        <span class="keyword">return</span> Proxy.newProxyInstance(<span class="keyword">this</span>.getClass().getClassLoader(), target.getClass().getInterfaces(), <span class="keyword">this</span>);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="comment">// 处理代理类并返回result</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> Object <span class="title">invoke</span><span class="params">(Object proxy, Method method, Object[] args)</span> <span class="keyword">throws</span> Throwable </span>&#123;</span><br><span class="line">        <span class="comment">// 动态代理的本质，就是使用反射机制实现</span></span><br><span class="line">        Object result = method.invoke(target, args);</span><br><span class="line">        <span class="keyword">return</span> result;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>定义client实现</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">Client</span> </span>&#123;</span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">main</span><span class="params">(String[] args)</span> </span>&#123;</span><br><span class="line">        <span class="comment">// 代理角色</span></span><br><span class="line">        <span class="comment">// 代理角色：现在没有</span></span><br><span class="line">        ProxyInvocationHandler pih = <span class="keyword">new</span> ProxyInvocationHandler();</span><br><span class="line">        <span class="comment">// 通过调用程序处理橘色来处理我们要调用的接口对象</span></span><br><span class="line">        <span class="comment">// 动态生成代理</span></span><br><span class="line">        pih.setTarget(<span class="keyword">new</span> StackFund());</span><br><span class="line">        StackTranscation proxy = (StackTranscation)pih.getProxy();</span><br><span class="line">        proxy.buy();</span><br><span class="line">        proxy.sell();</span><br><span class="line"></span><br><span class="line">        pih.setTarget(<span class="keyword">new</span> MixFund());</span><br><span class="line">        MixTranscation mixProxy = (MixTranscation)pih.getProxy();</span><br><span class="line">        mixProxy.buy();</span><br><span class="line">        mixProxy.sell();</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>输出为</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">购买股票型基金</span><br><span class="line">抛售股票型基金</span><br><span class="line">购买混合型基金</span><br><span class="line">抛售混合型基金</span><br></pre></td></tr></table></figure>
+
+</li>
+</ul>
+<p>动态代理的优缺点如下</p>
+<ul>
+<li>能够通过动态代理的方式创建代理角色，减少了代码量，降低了维护难度</li>
+<li>由于在客户端和真实主题之间增加了代理对象，因此有些类型的代理模式可能会导致处理速度变慢</li>
+</ul>
+]]></content>
+      <categories>
+        <category>设计模式</category>
+      </categories>
+      <tags>
+        <tag>Java</tag>
+        <tag>设计模式</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>Java并发之自定义一个线程池</title>
     <url>/2020/03/30/Java%E5%B9%B6%E5%8F%91%E4%B9%8B%E8%87%AA%E5%AE%9A%E4%B9%89%E4%B8%80%E4%B8%AA%E7%BA%BF%E7%A8%8B%E6%B1%A0/</url>
     <content><![CDATA[<h1 id="自定义一个线程池"><a href="#自定义一个线程池" class="headerlink" title="自定义一个线程池"></a>自定义一个线程池</h1><p>本文尝试实现一个线程池，具体架构如下所示，有以下几个成员</p>
