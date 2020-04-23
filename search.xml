@@ -357,8 +357,9 @@ Java6中引入了偏向锁来做进一步优化：**只有第一次使用CAS将�
   <entry>
     <title>从操作系统和JavaAPI层面解释线程的状态</title>
     <url>/2020/03/19/%E4%BB%8E%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E5%92%8CJavaAPI%E5%B1%82%E9%9D%A2%E8%A7%A3%E9%87%8A%E7%BA%BF%E7%A8%8B%E7%9A%84%E7%8A%B6%E6%80%81/</url>
-    <content><![CDATA[<h1 id="从操作系统和JavaAPI层面解释线程的状态"><a href="#从操作系统和JavaAPI层面解释线程的状态" class="headerlink" title="从操作系统和JavaAPI层面解释线程的状态"></a>从操作系统和JavaAPI层面解释线程的状态</h1><h2 id="从操作系统层面来看"><a href="#从操作系统层面来看" class="headerlink" title="从操作系统层面来看"></a>从操作系统层面来看</h2><a id="more"></a>
-<img src="https://willipic.oss-cn-hangzhou.aliyuncs.com/concurrency/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E5%B1%82%E9%9D%A2%E7%BA%BF%E7%A8%8B%E7%9A%845%E4%B8%AD%E7%8A%B6%E6%80%81.png" style="zoom:25%;" />
+    <content><![CDATA[<h1 id="从操作系统和JavaAPI层面解释线程的状态"><a href="#从操作系统和JavaAPI层面解释线程的状态" class="headerlink" title="从操作系统和JavaAPI层面解释线程的状态"></a>从操作系统和JavaAPI层面解释线程的状态</h1><p>本文从操作系统和JavaAPI两个层面分别解释线程的状态</p>
+<a id="more"></a>
+<h2 id="从操作系统层面来看"><a href="#从操作系统层面来看" class="headerlink" title="从操作系统层面来看"></a>从操作系统层面来看</h2><img src="https://willipic.oss-cn-hangzhou.aliyuncs.com/concurrency/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E5%B1%82%E9%9D%A2%E7%BA%BF%E7%A8%8B%E7%9A%845%E4%B8%AD%E7%8A%B6%E6%80%81.png" style="zoom:25%;" />
 
 <ul>
 <li>初始状态：仅在语言层面创建了对象，还未与操作系统建立联系</li>
@@ -462,8 +463,9 @@ Java6中引入了偏向锁来做进一步优化：**只有第一次使用CAS将�
   <entry>
     <title>SparkCore源码阅读之SparkContext,SparkConf,SparkEnv</title>
     <url>/2020/03/16/SparkCore%E6%BA%90%E7%A0%81%E9%98%85%E8%AF%BB%E4%B9%8BSparkContext-SparkConf-SparkEnv/</url>
-    <content><![CDATA[<h1 id="SparkCore之SparkContext-SparkConf"><a href="#SparkCore之SparkContext-SparkConf" class="headerlink" title="SparkCore之SparkContext,SparkConf"></a>SparkCore之SparkContext,SparkConf</h1><h2 id="Spark程序入口"><a href="#Spark程序入口" class="headerlink" title="Spark程序入口"></a>Spark程序入口</h2><a id="more"></a>
-<p>​        我们在编写Spark程序时，程序的入口一般都需创建SparkConf，设置SparkConf中的属性，再将SparkConf传入SparkContext中，比如一个简单的map算子程序，接下来通过SparkConf，SparkContext的源码，来解读Spark程序初始化的过程。</p>
+    <content><![CDATA[<h1 id="SparkCore之SparkContext-SparkConf"><a href="#SparkCore之SparkContext-SparkConf" class="headerlink" title="SparkCore之SparkContext,SparkConf"></a>SparkCore之SparkContext,SparkConf</h1><p>本文记录SparkCore,SparkContext,SparkConf源码阅读笔记</p>
+<a id="more"></a>
+<h2 id="Spark程序入口"><a href="#Spark程序入口" class="headerlink" title="Spark程序入口"></a>Spark程序入口</h2><p>​        我们在编写Spark程序时，程序的入口一般都需创建SparkConf，设置SparkConf中的属性，再将SparkConf传入SparkContext中，比如一个简单的map算子程序，接下来通过SparkConf，SparkContext的源码，来解读Spark程序初始化的过程。</p>
 <figure class="highlight scala"><table><tr><td class="code"><pre><span class="line"><span class="class"><span class="keyword">object</span> <span class="title">map</span> </span>&#123;</span><br><span class="line">  <span class="function"><span class="keyword">def</span> <span class="title">main</span></span>(args: <span class="type">Array</span>[<span class="type">String</span>]): <span class="type">Unit</span> = &#123;</span><br><span class="line">    <span class="keyword">val</span> conf = <span class="keyword">new</span> <span class="type">SparkConf</span>()</span><br><span class="line">    conf.setMaster(<span class="string">"local"</span>).setAppName(<span class="string">"map"</span>)</span><br><span class="line">    <span class="keyword">val</span> sc = <span class="keyword">new</span> <span class="type">SparkContext</span>(conf)</span><br><span class="line">    sc.setLogLevel(<span class="string">"Error"</span>)</span><br><span class="line">    <span class="comment">// 读取数据</span></span><br><span class="line">    <span class="keyword">val</span> lines = sc.textFile(<span class="string">"data/data.txt"</span>)</span><br><span class="line">    lines.map(one=&gt;&#123;</span><br><span class="line">      one + <span class="string">"#"</span></span><br><span class="line">    &#125;).foreach(println)</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 
 <h2 id="SparkConf"><a href="#SparkConf" class="headerlink" title="SparkConf"></a>SparkConf</h2><p>SparkConf是Spark application的配置类，SparkConf主要有以下几点功能以及特点：</p>
@@ -728,9 +730,9 @@ Java6中引入了偏向锁来做进一步优化：**只有第一次使用CAS将�
   <entry>
     <title>设计模式之单例模式</title>
     <url>/2020/03/10/%E8%AE%BE%E8%AE%A1%E6%A8%A1%E5%BC%8F%E4%B9%8B%E5%8D%95%E4%BE%8B%E6%A8%A1%E5%BC%8F/</url>
-    <content><![CDATA[<h2 id="单例模式"><a href="#单例模式" class="headerlink" title="单例模式"></a>单例模式</h2><p>​        在单例模式使得一个类的对象成为该类所在系统的唯一实例，单例模式适合用于需要重复创建的类，比如配置文件类。单例模式能够减少系统内存开销，降低GC压力。</p>
+    <content><![CDATA[<h2 id="单例模式"><a href="#单例模式" class="headerlink" title="单例模式"></a>单例模式</h2><p>​        本文介绍设计模式中的单例模式</p>
 <a id="more"></a>
-
+<p>​        在单例模式使得一个类的对象成为该类所在系统的唯一实例，单例模式适合用于需要重复创建的类，比如配置文件类。单例模式能够减少系统内存开销，降低GC压力。</p>
 <h3 id="单例模式的实现方式"><a href="#单例模式的实现方式" class="headerlink" title="单例模式的实现方式"></a>单例模式的实现方式</h3><h4 id="饿汉式"><a href="#饿汉式" class="headerlink" title="饿汉式"></a>饿汉式</h4><p>饿汉式有以下几点特点</p>
 <ul>
 <li>在类加载时就创建对象，即在类中将对象定义成static类型的类变量，跟随类一起加载，这种方式类似于<strong>空间换时间</strong></li>
@@ -784,8 +786,9 @@ Java6中引入了偏向锁来做进一步优化：**只有第一次使用CAS将�
   <entry>
     <title>设计模式之工厂模式和抽象工厂模式</title>
     <url>/2020/03/09/%E8%AE%BE%E8%AE%A1%E6%A8%A1%E5%BC%8F%E4%B9%8B%E5%B7%A5%E5%8E%82%E6%A8%A1%E5%BC%8F%E5%92%8C%E6%8A%BD%E8%B1%A1%E5%B7%A5%E5%8E%82%E6%A8%A1%E5%BC%8F/</url>
-    <content><![CDATA[<h2 id="工厂模式"><a href="#工厂模式" class="headerlink" title="工厂模式"></a>工厂模式</h2><p>​        工厂模式在设计模式中属于创建者模式，工厂模式的目的是不让创建对象时不把创建逻辑暴露给客户端，并且通过一个统一接口来指向创建对象</p>
+    <content><![CDATA[<h2 id="工厂模式"><a href="#工厂模式" class="headerlink" title="工厂模式"></a>工厂模式</h2><p>​        本文介绍设计模式中的工厂模式</p>
 <a id="more"></a>
+<p>​        工厂模式在设计模式中属于创建者模式，工厂模式的目的是不让创建对象时不把创建逻辑暴露给客户端，并且通过一个统一接口来指向创建对象</p>
 <h3 id="核心本质"><a href="#核心本质" class="headerlink" title="核心本质"></a>核心本质</h3><ul>
 <li><strong>实例化对象不是用new而使用工厂方法代替</strong></li>
 <li>将选择实现类，创建对象统一管理和控制，从而将调用者与使用者解耦</li>
@@ -926,9 +929,10 @@ Java6中引入了偏向锁来做进一步优化：**只有第一次使用CAS将�
   <entry>
     <title>Java并发之ThreadPool简介</title>
     <url>/2020/03/03/Java%E5%B9%B6%E5%8F%91%E4%B9%8BThreadPool%E7%AE%80%E4%BB%8B/</url>
-    <content><![CDATA[<h1 id="ThreadPool"><a href="#ThreadPool" class="headerlink" title="ThreadPool"></a>ThreadPool</h1><h2 id="需要了解的相关接口或类"><a href="#需要了解的相关接口或类" class="headerlink" title="需要了解的相关接口或类"></a>需要了解的相关接口或类</h2><a id="more"></a>
+    <content><![CDATA[<h1 id="ThreadPool"><a href="#ThreadPool" class="headerlink" title="ThreadPool"></a>ThreadPool</h1><p>本文介绍Java中的ThreadPool</p>
+<a id="more"></a>
 
-<p>首先，ThreadPool有关的接口或类的继承图如下</p>
+<h2 id="需要了解的相关接口或类"><a href="#需要了解的相关接口或类" class="headerlink" title="需要了解的相关接口或类"></a>需要了解的相关接口或类</h2><p>首先，ThreadPool有关的接口或类的继承图如下</p>
 <p><img src="https://gitee.com/objcoding/md-picture/raw/master/img/threadpool_9.png" alt=""></p>
 <h3 id="Executor"><a href="#Executor" class="headerlink" title="Executor"></a>Executor</h3><p>顶级接口，调用实现了Runnable接口的命令</p>
 <p>Executors的存在是为了避免开发者显式的去创建一个线程</p>
@@ -1038,145 +1042,6 @@ Java6中引入了偏向锁来做进一步优化：**只有第一次使用CAS将�
       </categories>
       <tags>
         <tag>并发</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>Standalone模式搭建</title>
-    <url>/2020/02/26/Standalone%E6%A8%A1%E5%BC%8F%E6%90%AD%E5%BB%BA/</url>
-    <content><![CDATA[<h1 id="Spark-Standalone模式"><a href="#Spark-Standalone模式" class="headerlink" title="Spark Standalone模式"></a>Spark Standalone模式</h1><h2 id="准备工作"><a href="#准备工作" class="headerlink" title="准备工作"></a>准备工作</h2><h3 id="安装配置jdk8"><a href="#安装配置jdk8" class="headerlink" title="安装配置jdk8"></a>安装配置jdk8</h3><ul>
-<li><p>检查jdk版本</p>
-</li>
-<li><p>上传jdk8和Spark2.3.1到node01</p>
-</li>
-<li><p><code>[root@node01 software]# tar -zxvf ./jdk-8u181-linux-x64.tar.gz</code></p>
-</li>
-<li><p>删除jdk安装包<code>[root@node01 software]# rm -rf ./jdk-8u181-linux-x64.tar.gz</code></p>
-</li>
-<li><p>在node01上配置jdk，注意PATH必须放到export jdk前面，不然会导致还是识别老版本的jdk</p>
-</li>
-</ul>
-<a id="more"></a>
-
-  <figure class="highlight plain"><table><tr><td class="code"><pre><span class="line"># export JAVA_HOME&#x3D;&#x2F;usr&#x2F;java&#x2F;jdk1.7.0_67</span><br><span class="line">export JAVA_HOME&#x3D;&#x2F;root&#x2F;software&#x2F;jdk1.8.0_181</span><br><span class="line">export PATH&#x3D;$JAVA_HOME&#x2F;bin:$PATH</span><br><span class="line">export HADOOP_HOME&#x3D;&#x2F;opt&#x2F;sxt&#x2F;hadoop-2.6.5</span><br><span class="line">export HBASE_HOME&#x3D;&#x2F;root&#x2F;hbase</span><br><span class="line">export PATH&#x3D;$PATH:$HADOOP_HOME&#x2F;bin:$HADOOP_HOME&#x2F;sbin:$HBASE_HOME&#x2F;bin</span><br></pre></td></tr></table></figure>
-
-<ul>
-<li><p>在其他节点上也配置jdk8</p>
-</li>
-<li><p>发送jdk8到其他节点上<code>[root@node01 software]# scp -r ./jdk1.8.0_181/ node02:</code>pwd``</p>
-</li>
-<li><p>每个node上都要<code>source /etc/profile</code></p>
-</li>
-<li><p>直接解压的java需要覆盖软连接路径，软连接路径在<code>/usr/bin</code>下，因为spark默认会在usr/bin目录下寻找java</p>
-</li>
-<li><p>改变java的软连接<code>ln -sf /root/software/jdk1.8.0_181/bin/java  /usr/bin/java</code></p>
-</li>
-<li><p>配置hadoop配置文件中的java<code>[root@node01 hadoop]# vim hadoop-env.sh</code></p>
-</li>
-<li><p>每个节点都修改文件<code>export JAVA_HOME=/root/software/jdk1.8.0_181/bin/java</code></p>
-</li>
-<li><p>勘误：应该是改成<code>export JAVA_HOME=/root/software/jdk1.8.0_181</code><strong>不然hadoop集群起不来</strong></p>
-</li>
-</ul>
-<h3 id="安装Spark"><a href="#安装Spark" class="headerlink" title="安装Spark"></a>安装Spark</h3><ul>
-<li><p>解压<code>[root@node01 software]# tar -zxvf ./spark-2.3.1-bin-hadoop2.6.tgz</code></p>
-</li>
-<li><p>改名<code>[root@node01 software]# mv ./spark-2.3.1-bin-hadoop2.6.tgz  ./spark-2.3.1</code></p>
-</li>
-<li><p>删除安装包<code>[root@node01 software]# rm -rf ./spark-2.3.1-bin-hadoop2.6</code></p>
-</li>
-<li><p>先配置spark的slave，先复制一份<code>[root@node01 conf]# cp slaves.template slaves</code></p>
-</li>
-<li><p><code>[root@node01 conf]# vim slaves</code>添加node02，node03</p>
-</li>
-<li><p><code>[root@node01 conf]# cp spark-env.sh.template spark-env.sh</code></p>
-</li>
-<li><p><code>[root@node01 conf]# vim spark-env.sh</code>，配置相关配置信息</p>
-<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">export SPARK_MASTER_HOST&#x3D;node01</span><br><span class="line">export SPARK_MASTER_PORT&#x3D;7077</span><br><span class="line">export SPARK_WORKER_CORES&#x3D;2</span><br><span class="line">export SPARK_WORKER_MEMORY&#x3D;3g</span><br></pre></td></tr></table></figure>
-</li>
-<li><p>发送spark文件夹到node02，node03节点<code>[root@node01 sbin]# scp -r ./spark-2.3.1/ node03:</code>pwd```</p>
-</li>
-</ul>
-<h3 id="安装Spark客户端"><a href="#安装Spark客户端" class="headerlink" title="安装Spark客户端"></a>安装Spark客户端</h3><ul>
-<li><code>[root@node04 software]# mkdir spark</code></li>
-<li><code>[root@node01 software]# scp -r spark-2.3.1/ node04:</code>pwd``</li>
-<li><code>[root@node04 spark-2.3.1]# cd conf/</code></li>
-<li><code>[root@node04 conf]# rm -f ./slaves</code></li>
-<li><code>[root@node04 conf]# rm -f ./spark-env.sh</code></li>
-</ul>
-<h2 id="对Spark集群进行操作"><a href="#对Spark集群进行操作" class="headerlink" title="对Spark集群进行操作"></a>对Spark集群进行操作</h2><h3 id="运行Spark集群"><a href="#运行Spark集群" class="headerlink" title="运行Spark集群"></a>运行Spark集群</h3><ul>
-<li><p>启动spark集群，首先要进入<code>/root/software/spark-2.3.1/sbin</code>目录下，再<code>[root@node01 sbin]# ./start-all.sh</code></p>
-</li>
-<li><p>进入web端页面查看<code>node01:8080</code></p>
-<p><img src="https://willipic.oss-cn-hangzhou.aliyuncs.com/Spark/sparkweb%E9%A1%B5%E9%9D%A2%E6%9F%A5%E7%9C%8B.png" alt=""></p>
-</li>
-<li><p>关闭集群<code>[root@node01 sbin]# ./stop-all.sh</code></p>
-</li>
-</ul>
-<h3 id="Standalone模式提交任务"><a href="#Standalone模式提交任务" class="headerlink" title="Standalone模式提交任务"></a>Standalone模式提交任务</h3><ul>
-<li>启动集群</li>
-</ul>
-]]></content>
-      <categories>
-        <category>Spark</category>
-      </categories>
-      <tags>
-        <tag>Spark</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>idea远程连接hadoop进行文件操作</title>
-    <url>/2019/02/26/idea%E8%BF%9C%E7%A8%8B%E8%BF%9E%E6%8E%A5hadoop%E8%BF%9B%E8%A1%8C%E6%96%87%E4%BB%B6%E6%93%8D%E4%BD%9C/</url>
-    <content><![CDATA[<h1 id="idea远程连接hadoop进行文件操作"><a href="#idea远程连接hadoop进行文件操作" class="headerlink" title="idea远程连接hadoop进行文件操作"></a>idea远程连接hadoop进行文件操作</h1><p>部署完高可用集群之后，尝试idea远程连接hadoop进行操作</p>
-<h2 id="配置windows中的hadoop环境"><a href="#配置windows中的hadoop环境" class="headerlink" title="配置windows中的hadoop环境"></a>配置windows中的hadoop环境</h2><ul>
-<li><p>下载hadoop2.6.5到windows中并放在一个纯英文目录下</p>
-</li>
-<li><p>配置环境变量，先系统变量中创建HADOOP_HOME</p>
-<a id="more"></a>
-<p><img src="https://raw.githubusercontent.com/ThisisWilli/BigData/master/Hadoop/pic/%E5%88%9B%E5%BB%BAHADOOP_HOME.PNG" alt="https://raw.githubusercontent.com/ThisisWilli/BigData/master/Hadoop/pic/%E5%88%9B%E5%BB%BAHADOOP_HOME.PNG"></p>
-</li>
-<li><p>创建HADOOP_USER_NAME，名称为集群中的登录名称</p>
-<p><img src="https://raw.githubusercontent.com/ThisisWilli/BigData/master/Hadoop/pic/%E5%88%9B%E5%BB%BAHADOOP_USER_NAME.PNG" alt="https://raw.githubusercontent.com/ThisisWilli/BigData/master/Hadoop/pic/%E5%88%9B%E5%BB%BAHADOOP_USER_NAME.PNG"></p>
-</li>
-<li><p>在系统变量的Path中添加%HADOOP_HOME%/bin</p>
-</li>
-<li><p>将hadoop.dll添加到C:\Windows\System32文件夹下</p>
-</li>
-<li><p>在命令行中输入hdfs和hadoop，检测是否安装成功</p>
-<p><img src="https://raw.githubusercontent.com/ThisisWilli/BigData/master/Hadoop/pic/hadoop%E6%98%AF%E5%90%A6%E5%AE%89%E8%A3%85%E6%88%90%E5%8A%9F.PNG" alt="https://raw.githubusercontent.com/ThisisWilli/BigData/master/Hadoop/pic/hadoop%E6%98%AF%E5%90%A6%E5%AE%89%E8%A3%85%E6%88%90%E5%8A%9F.PNG"></p>
-</li>
-</ul>
-<h2 id="在idea中配置hadoop"><a href="#在idea中配置hadoop" class="headerlink" title="在idea中配置hadoop"></a>在idea中配置hadoop</h2><ul>
-<li><p>首先下载插件(再次感谢作者)<a href="https://github.com/fangyuzhong2016/HadoopIntellijPlugin，直接clone下来即可，注意项目中所要求的配置信息" target="_blank" rel="noopener">https://github.com/fangyuzhong2016/HadoopIntellijPlugin，直接clone下来即可，注意项目中所要求的配置信息</a></p>
-</li>
-<li><p>idea中创建maven项目</p>
-<p><img src="https://raw.githubusercontent.com/ThisisWilli/BigData/master/Hadoop/pic/%E5%88%9B%E5%BB%BAmaven%E5%B7%A5%E7%A8%8B.PNG" alt="https://raw.githubusercontent.com/ThisisWilli/BigData/master/Hadoop/pic/%E5%88%9B%E5%BB%BAmaven%E5%B7%A5%E7%A8%8B.PNG"></p>
-</li>
-<li><p>工程创建完成之后，File-&gt;Settings-Plugin-&gt;点击右上角的设置-&gt;Install plugin from disk</p>
-<p><img src="https://raw.githubusercontent.com/ThisisWilli/BigData/master/Hadoop/pic/%E5%AE%89%E8%A3%85plugins.PNG" alt="https://raw.githubusercontent.com/ThisisWilli/BigData/master/Hadoop/pic/%E5%AE%89%E8%A3%85plugins.PNG"></p>
-</li>
-<li><p>重启idea，菜单栏中会出现hadoop选项</p>
-</li>
-</ul>
-<h2 id="连接hadoop，进行文件操作"><a href="#连接hadoop，进行文件操作" class="headerlink" title="连接hadoop，进行文件操作"></a>连接hadoop，进行文件操作</h2><ul>
-<li><p>首先开启集群，先<code>zkServer.sh start</code>开启zookeeper，再<code>start-dfs.sh</code>开启全部节点，在配置节点前首先进入node01:50070查看node01和node02的状态。</p>
-</li>
-<li><p>点击idea上方菜单栏中的hadoop进入设置</p>
-<p><img src="https://raw.githubusercontent.com/ThisisWilli/BigData/master/Hadoop/pic/%E8%AE%BE%E7%BD%AEhadoop%E6%96%87%E4%BB%B6%E7%B3%BB%E7%BB%9F.PNG" alt="https://raw.githubusercontent.com/ThisisWilli/BigData/master/Hadoop/pic/%E8%AE%BE%E7%BD%AEhadoop%E6%96%87%E4%BB%B6%E7%B3%BB%E7%BB%9F.PNG"></p>
-</li>
-<li><p>确定之后左边会出现hadoop</p>
-<p><img src="https://raw.githubusercontent.com/ThisisWilli/BigData/master/Hadoop/pic/hadoop%E4%BE%A7%E8%BE%B9%E6%A0%8F.PNG" alt="https://raw.githubusercontent.com/ThisisWilli/BigData/master/Hadoop/pic/hadoop%E4%BE%A7%E8%BE%B9%E6%A0%8F.PNG"></p>
-</li>
-<li><p>进行文件操作，代码具体如下，可用junit进行调试，并在hadoop插件中查看hdfs文件系统</p>
-<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="keyword">package</span> com.sxt.hdfs.test;</span><br><span class="line"></span><br><span class="line"><span class="keyword">import</span> org.apache.hadoop.conf.Configuration;</span><br><span class="line"><span class="keyword">import</span> org.apache.hadoop.conf.Configured;</span><br><span class="line"><span class="keyword">import</span> org.apache.hadoop.fs.*;</span><br><span class="line"><span class="keyword">import</span> org.apache.hadoop.io.IOUtils;</span><br><span class="line"><span class="keyword">import</span> org.junit.After;</span><br><span class="line"><span class="keyword">import</span> org.junit.Before;</span><br><span class="line"><span class="keyword">import</span> org.junit.Test;</span><br><span class="line"></span><br><span class="line"><span class="keyword">import</span> java.io.BufferedInputStream;</span><br><span class="line"><span class="keyword">import</span> java.io.FileInputStream;</span><br><span class="line"><span class="keyword">import</span> java.io.IOException;</span><br><span class="line"><span class="keyword">import</span> java.io.InputStream;</span><br><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment"> * \* Project: hadoop</span></span><br><span class="line"><span class="comment"> * \* Package: com.sxt.hdfs.test</span></span><br><span class="line"><span class="comment"> * \* Author: Hoodie_Willi</span></span><br><span class="line"><span class="comment"> * \* Date: 2019-07-29 20:36:22</span></span><br><span class="line"><span class="comment"> * \* Description:</span></span><br><span class="line"><span class="comment"> * \</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">test</span> </span>&#123;</span><br><span class="line">    Configuration conf = <span class="keyword">null</span>;</span><br><span class="line">    FileSystem fs = <span class="keyword">null</span>;</span><br><span class="line">    <span class="meta">@Before</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">conn</span><span class="params">()</span> <span class="keyword">throws</span> IOException </span>&#123;</span><br><span class="line">        conf = <span class="keyword">new</span> Configuration();</span><br><span class="line">        fs = FileSystem.get(conf);</span><br><span class="line">        <span class="comment">//System.out.println("success");</span></span><br><span class="line">    &#125;</span><br><span class="line">    <span class="meta">@Test</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">mkdir</span><span class="params">()</span> <span class="keyword">throws</span> IOException </span>&#123;</span><br><span class="line">        Path path = <span class="keyword">new</span> Path(<span class="string">"/mytemp"</span>);</span><br><span class="line">        <span class="keyword">if</span> (fs.exists(path))&#123;</span><br><span class="line">            fs.delete(path);</span><br><span class="line">        &#125;</span><br><span class="line">        fs.mkdirs(path);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="meta">@Test</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">uploadFile</span><span class="params">()</span> <span class="keyword">throws</span> IOException</span>&#123;</span><br><span class="line">        <span class="comment">//文件上传路径</span></span><br><span class="line">        Path path = <span class="keyword">new</span> Path(<span class="string">"/mytemp/haha.txt"</span>);</span><br><span class="line">        FSDataOutputStream fdos = fs.create(path);</span><br><span class="line">        <span class="comment">//获取磁盘文件</span></span><br><span class="line">        InputStream is = <span class="keyword">new</span> BufferedInputStream(<span class="keyword">new</span> FileInputStream(<span class="string">"D:\\IdeaProject\\hadoop\\src\\files\\hello.txt"</span>));</span><br><span class="line">        IOUtils.copyBytes(is, fdos, conf, <span class="keyword">true</span>);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="meta">@Test</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">readFile</span><span class="params">()</span> <span class="keyword">throws</span> IOException</span>&#123;</span><br><span class="line">        Path f = <span class="keyword">new</span> Path(<span class="string">"/user/root/test.txt"</span>);</span><br><span class="line">        FileStatus file = fs.getFileStatus(f);</span><br><span class="line"><span class="comment">//        BlockLocation[] blks = fs.getFileBlockLocations(file,0, file.getLen());</span></span><br><span class="line"><span class="comment">//        for (BlockLocation blk : blks)&#123;</span></span><br><span class="line"><span class="comment">//            System.out.println(blk);</span></span><br><span class="line"><span class="comment">//        &#125;</span></span><br><span class="line">        <span class="comment">//读取文件</span></span><br><span class="line">        FSDataInputStream fdis = fs.open(f); <span class="comment">// fileinputstream</span></span><br><span class="line">        fdis.seek(<span class="number">1048576</span>);</span><br><span class="line">        System.out.println((<span class="keyword">char</span>) fdis.readByte());</span><br><span class="line">        System.out.println((<span class="keyword">char</span>) fdis.readByte());</span><br><span class="line">        System.out.println((<span class="keyword">char</span>) fdis.readByte());</span><br><span class="line">        System.out.println((<span class="keyword">char</span>) fdis.readByte());</span><br><span class="line">        System.out.println((<span class="keyword">char</span>) fdis.readByte());</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="comment">//@After</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">close</span><span class="params">()</span> <span class="keyword">throws</span> IOException</span>&#123;</span><br><span class="line">        fs.close();</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-</li>
-</ul>
-]]></content>
-      <categories>
-        <category>Hadoop</category>
-      </categories>
-      <tags>
-        <tag>Hadoop</tag>
       </tags>
   </entry>
 </search>

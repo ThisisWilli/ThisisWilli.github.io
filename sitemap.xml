@@ -2,6 +2,41 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   
   <url>
+    <loc>https://thisiswilli.cn/2020/03/16/SparkCore%E6%BA%90%E7%A0%81%E9%98%85%E8%AF%BB%E4%B9%8BSparkContext-SparkConf-SparkEnv/</loc>
+    
+    <lastmod>2020-04-23T11:24:18.052Z</lastmod>
+    
+  </url>
+  
+  <url>
+    <loc>https://thisiswilli.cn/2020/03/10/%E8%AE%BE%E8%AE%A1%E6%A8%A1%E5%BC%8F%E4%B9%8B%E5%8D%95%E4%BE%8B%E6%A8%A1%E5%BC%8F/</loc>
+    
+    <lastmod>2020-04-23T11:22:56.826Z</lastmod>
+    
+  </url>
+  
+  <url>
+    <loc>https://thisiswilli.cn/2020/03/09/%E8%AE%BE%E8%AE%A1%E6%A8%A1%E5%BC%8F%E4%B9%8B%E5%B7%A5%E5%8E%82%E6%A8%A1%E5%BC%8F%E5%92%8C%E6%8A%BD%E8%B1%A1%E5%B7%A5%E5%8E%82%E6%A8%A1%E5%BC%8F/</loc>
+    
+    <lastmod>2020-04-23T11:22:22.888Z</lastmod>
+    
+  </url>
+  
+  <url>
+    <loc>https://thisiswilli.cn/2020/03/03/Java%E5%B9%B6%E5%8F%91%E4%B9%8BThreadPool%E7%AE%80%E4%BB%8B/</loc>
+    
+    <lastmod>2020-04-23T11:21:49.851Z</lastmod>
+    
+  </url>
+  
+  <url>
+    <loc>https://thisiswilli.cn/2020/03/19/%E4%BB%8E%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E5%92%8CJavaAPI%E5%B1%82%E9%9D%A2%E8%A7%A3%E9%87%8A%E7%BA%BF%E7%A8%8B%E7%9A%84%E7%8A%B6%E6%80%81/</loc>
+    
+    <lastmod>2020-04-23T11:17:43.698Z</lastmod>
+    
+  </url>
+  
+  <url>
     <loc>https://thisiswilli.cn/2020/04/21/%E8%AE%BE%E8%AE%A1%E6%A8%A1%E5%BC%8F%E4%B9%8B%E4%BB%A3%E7%90%86%E6%A8%A1%E5%BC%8F/</loc>
     
     <lastmod>2020-04-21T12:16:18.187Z</lastmod>
@@ -16,30 +51,9 @@
   </url>
   
   <url>
-    <loc>https://thisiswilli.cn/2020/03/10/%E8%AE%BE%E8%AE%A1%E6%A8%A1%E5%BC%8F%E4%B9%8B%E5%8D%95%E4%BE%8B%E6%A8%A1%E5%BC%8F/</loc>
-    
-    <lastmod>2020-03-24T03:41:22.324Z</lastmod>
-    
-  </url>
-  
-  <url>
     <loc>https://thisiswilli.cn/2020/03/19/Synchronized%E5%85%B3%E9%94%AE%E5%AD%97%E5%8F%8A%E8%BF%9B%E9%98%B6/</loc>
     
     <lastmod>2020-03-19T11:25:47.022Z</lastmod>
-    
-  </url>
-  
-  <url>
-    <loc>https://thisiswilli.cn/2020/03/19/%E4%BB%8E%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E5%92%8CJavaAPI%E5%B1%82%E9%9D%A2%E8%A7%A3%E9%87%8A%E7%BA%BF%E7%A8%8B%E7%9A%84%E7%8A%B6%E6%80%81/</loc>
-    
-    <lastmod>2020-03-19T08:00:43.618Z</lastmod>
-    
-  </url>
-  
-  <url>
-    <loc>https://thisiswilli.cn/2020/03/16/SparkCore%E6%BA%90%E7%A0%81%E9%98%85%E8%AF%BB%E4%B9%8BSparkContext-SparkConf-SparkEnv/</loc>
-    
-    <lastmod>2020-03-16T14:45:27.637Z</lastmod>
     
   </url>
   
@@ -75,34 +89,6 @@
     <loc>https://thisiswilli.cn/about/index.html</loc>
     
     <lastmod>2020-03-10T11:29:50.858Z</lastmod>
-    
-  </url>
-  
-  <url>
-    <loc>https://thisiswilli.cn/2020/03/09/%E8%AE%BE%E8%AE%A1%E6%A8%A1%E5%BC%8F%E4%B9%8B%E5%B7%A5%E5%8E%82%E6%A8%A1%E5%BC%8F%E5%92%8C%E6%8A%BD%E8%B1%A1%E5%B7%A5%E5%8E%82%E6%A8%A1%E5%BC%8F/</loc>
-    
-    <lastmod>2020-03-10T11:28:41.323Z</lastmod>
-    
-  </url>
-  
-  <url>
-    <loc>https://thisiswilli.cn/2020/03/03/Java%E5%B9%B6%E5%8F%91%E4%B9%8BThreadPool%E7%AE%80%E4%BB%8B/</loc>
-    
-    <lastmod>2020-03-04T12:03:17.296Z</lastmod>
-    
-  </url>
-  
-  <url>
-    <loc>https://thisiswilli.cn/2020/02/26/Standalone%E6%A8%A1%E5%BC%8F%E6%90%AD%E5%BB%BA/</loc>
-    
-    <lastmod>2020-02-26T13:09:13.197Z</lastmod>
-    
-  </url>
-  
-  <url>
-    <loc>https://thisiswilli.cn/2019/02/26/idea%E8%BF%9C%E7%A8%8B%E8%BF%9E%E6%8E%A5hadoop%E8%BF%9B%E8%A1%8C%E6%96%87%E4%BB%B6%E6%93%8D%E4%BD%9C/</loc>
-    
-    <lastmod>2020-02-26T13:00:48.806Z</lastmod>
     
   </url>
   
