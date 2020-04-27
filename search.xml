@@ -1,6 +1,168 @@
 <?xml version="1.0" encoding="utf-8"?>
 <search>
   <entry>
+    <title>Zookeeper简介及JavaAPI简单操作</title>
+    <url>/2020/04/27/Zookeeper%E7%AE%80%E4%BB%8B%E5%8F%8AJavaAPI%E7%AE%80%E5%8D%95%E6%93%8D%E4%BD%9C/</url>
+    <content><![CDATA[<h1 id="Zookeeper简介及利用JavaAPI操作"><a href="#Zookeeper简介及利用JavaAPI操作" class="headerlink" title="Zookeeper简介及利用JavaAPI操作"></a>Zookeeper简介及利用JavaAPI操作</h1><p>本文介绍zookeeper的伪分布式安装，zookeeper中的基本概念以及利用JavaAPI简单操作zookeeper</p>
+<a id="more"></a>
+
+<h2 id="zookeeper安装"><a href="#zookeeper安装" class="headerlink" title="zookeeper安装"></a>zookeeper安装</h2><p>Zookeeper主要有以下部署模式</p>
+<ul>
+<li>Standalone模式：单机部署，用于验证zookeeper的功能</li>
+<li>伪集群模式：类似于kafka的单机多broker模式，用java进程模拟一个zookeeper服务，也是单机部署</li>
+<li>集群模式：在多台服务其中部署</li>
+</ul>
+<p>因为没有服务器资源，本文介绍伪集群模式部署，具体步骤如下，本机环境为macos10.15.4</p>
+<ol>
+<li><p>下载zookeeper，可以选择<a href="http://zookeeper.apache.org/releases.html" target="_blank" rel="noopener">官网下载</a>，也可以下载<a href="http://archive.cloudera.com/cdh5/cdh/5/" target="_blank" rel="noopener">cdh版本</a></p>
+</li>
+<li><p>下载到本地之后解压</p>
+<ul>
+<li><p>配置环境变量<code>➜  ~ vim .bash_profile</code></p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">export ZOOKEEPER_HOME&#x3D;your path</span><br><span class="line">export PATH&#x3D;$PATH:$ZOOKEEPER_HOME&#x2F;bin</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>使更改生效<code>➜  ~ source .bash_profile</code></p>
+</li>
+</ul>
+</li>
+<li><p>切换到zookeeper下的conf目录，创建三个配置文件zoo1.cfg，zoo1.cfg，zoo1.cfg</p>
+<p>zookeeper中有三个重要端口</p>
+<ul>
+<li>2181：对cline端提供服务</li>
+<li>3888：选举leader使用</li>
+<li>2888：集群内机器通讯使用（Leader监听此端口）</li>
+</ul>
+<p>本文介绍伪分布式安装，所有这三个端口也应该使用不同的端口号，三个配置文件如下</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">zoo1.cfg</span><br><span class="line"># 用于zk节点之间的心跳检测，最小session超时时间是ticktime的两倍</span><br><span class="line">tickTime&#x3D;2000</span><br><span class="line"># Leader服务器等待Follower启动并完成数据同步的时间，默认值10，表示tickTime的10倍</span><br><span class="line">initLimit&#x3D;10</span><br><span class="line"># Leader服务器和Follower之间进行心跳检测的最大延时时间，默认值5，表示tickTime的5倍</span><br><span class="line">syncLimit&#x3D;5</span><br><span class="line"># Zookeeper服务器存储快照文件的目录，必须配置</span><br><span class="line">dataDir&#x3D;&#x2F;BigDataComponent&#x2F;zookeeper&#x2F;data_1</span><br><span class="line"># Zookeeper服务器存储事务日志的目录，默认为dataDir</span><br><span class="line">dataLogDir&#x3D;&#x2F;BigDataComponent&#x2F;zookeeper&#x2F;log_1</span><br><span class="line"># 监听客户端连接的端口</span><br><span class="line">clientPort&#x3D;2181</span><br><span class="line">server.1 &#x3D; localhost:2888:3888</span><br><span class="line">server.2 &#x3D; localhost:2889:3889</span><br><span class="line">server.3 &#x3D; localhost:2890:3890</span><br><span class="line"></span><br><span class="line">zoo2.cfg</span><br><span class="line">tickTime&#x3D;2000</span><br><span class="line">initLimit&#x3D;10</span><br><span class="line">syncLimit&#x3D;5</span><br><span class="line">dataDir&#x3D;&#x2F;BigDataComponent&#x2F;zookeeper&#x2F;data_2</span><br><span class="line">dataLogDir&#x3D;&#x2F;BigDataComponent&#x2F;zookeeper&#x2F;log_2</span><br><span class="line">clientPort&#x3D;2182</span><br><span class="line">server.1 &#x3D; localhost:2888:3888</span><br><span class="line">server.2 &#x3D; localhost:2889:3889</span><br><span class="line">server.3 &#x3D; localhost:2890:3890</span><br><span class="line"></span><br><span class="line">zoo3.cfg</span><br><span class="line">tickTime&#x3D;2000</span><br><span class="line">initLimit&#x3D;10</span><br><span class="line">syncLimit&#x3D;5</span><br><span class="line">dataDir&#x3D;&#x2F;BigDataComponent&#x2F;zookeeper&#x2F;data_3</span><br><span class="line">dataLogDir&#x3D;&#x2F;BigDataComponent&#x2F;zookeeper&#x2F;log_3</span><br><span class="line">clientPort&#x3D;2183</span><br><span class="line">server.1 &#x3D; localhost:2888:3888</span><br><span class="line">server.2 &#x3D; localhost:2889:3889</span><br><span class="line">server.3 &#x3D; localhost:2890:3890</span><br></pre></td></tr></table></figure>
+</li>
+<li><p><strong>在启动之前，还有重要一步</strong>，在三个dataDir文件下创建一个myid文件，分别写入1，2，3对应配置文件中的server.1，server.2，server.3</p>
+</li>
+<li><p>启动zk</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">➜  conf zkServer.sh start $ZOOKEEPER_HOME&#x2F;conf&#x2F;zoo1.cfg</span><br><span class="line">➜  conf zkServer.sh start $ZOOKEEPER_HOME&#x2F;conf&#x2F;zoo2.cfg</span><br><span class="line">➜  conf zkServer.sh start $ZOOKEEPER_HOME&#x2F;conf&#x2F;zoo3.cfg</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>查看jps进程以及每个zookeeper进程的状态，可以看到主从状态，说明安装成功。</p>
+<p><img src="https://willipic.oss-cn-hangzhou.aliyuncs.com/JavaFoundation/%E6%9F%A5%E7%9C%8Bzookeeper%E7%8A%B6%E6%80%81.png" alt=""></p>
+</li>
+</ol>
+<h2 id="zookeeper的数据模型"><a href="#zookeeper的数据模型" class="headerlink" title="zookeeper的数据模型"></a>zookeeper的数据模型</h2><p>​        zookeeper具有分层的名称空间，类似于分布式文件系统。</p>
+<p><img src="https://zookeeper.apache.org/doc/r3.1.2/images/zknamespace.jpg" alt=""></p>
+<h3 id="ZNodes"><a href="#ZNodes" class="headerlink" title="ZNodes"></a>ZNodes</h3><p>​        如上图所示，每个节点都被当作一个znode，每个znode中都维护着一个stat structure和一个时间戳，状态结构包含着节点数据以及acl的版本变更信息，stat structure结合时间戳能够让zookeeper验证数据缓存以及及时更新数据，每当znode中的数据发生改变，版本号就会相应增加， 并且，当客户端执行更新或删除时，它必须提供其更改的znode数据的版本。 如果它提供的版本与数据的实际版本不匹配，则更新将失败。</p>
+<h4 id="Watches"><a href="#Watches" class="headerlink" title="Watches"></a>Watches</h4><p>​       ZooKeeper中的所有读取操作<code>getData()，getChildren()和exist()</code>都可以附属一次watch操作。ZooKeeper对watch的定义为：watch事件<strong>是一次性触发的</strong>，发送给设置watch的客户端，该事件在设置watch的数据更改时发生。 在watch的定义中，需要考虑三个关键点</p>
+<ul>
+<li><strong>一次性触发</strong>：数据更改后，一个watch事件将发送给客户端。 例如，如果客户端执行<code>getData(&quot;/ znode1&quot;,true)</code>，然后/ znode1的数据被更改或删除，则服务端会向客户端返回/ znode1的watch事件。 如果/ znode1再次更改，则除非客户端进行了另一次读取以设置新的watch，否则不会发送任何watch事件。</li>
+<li><strong>watch发送至客户端</strong>：Watch事件是异步发送到客户端。Zookeeper可以保证客户端发送过去的更新顺序是有序的。例如：某个Znode没有设置watcher，那么客户端对这个Znode设置Watcher发送到集群之前，该客户端是感知不到该Znode任何的改变情况的。换个角度来解释：由于Watch有一次性触发的特点，所以在服务器端没有Watcher的情况下，Znode的任何变更就不会通知到客户端。不过，即使某个Znode设置了Watcher，且在Znode有变化的情况下通知到了客户端，但是在客户端接收到这个变化事件，但是还没有再次设置Watcher之前，如果其他客户端对该Znode做了修改，这种情况下，Znode第二次的变化客户端是无法收到通知的。这可能是由于网络延迟或者是其他因素导致，所以我们使用Zookeeper不能期望能够监控到节点每次的变化。<strong>Zookeeper只能保证最终的一致性，而无法保证强一致性。</strong></li>
+<li><strong>设置watch的数据内容</strong>：Znode改变有很多种方式，例如：节点创建，节点删除，节点改变，子节点改变等等。Zookeeper维护了两个Watch列表，一个节点数据Watch列表，另一个是子节点Watch列表。<code>getData()和exists()</code>设置数据Watch，<code>getChildren()</code>设置子节点Watch。两者选其一，可以让我们根据watch的返回结果选择不同的Watch方式，<code>getData()和exists()</code>返回节点的内容，getChildren()返回子节点列表。因此，<code>setData()</code>触发内容Watch，<code>create()</code>触发当前节点的内容Watch或者是其父节点的子节点Watch。<code>delete()</code>同时触发父节点的子节点Watch和内容Watch，以及子节点的内容Watch</li>
+</ul>
+<p>​        Watch在客户端连接到的ZooKeeper服务器上本地维护。 这使watch更加轻量，更容易维护和调度。 当客户端连接到新服务器时，watch将会被任何session事件触发。 当客户端与服务器断开连接时，client不会收到任何watch。 当客户端重新连接时，任何以前注册的watch将被重新注册并在需要时触发。 通常，所有这些都是透明发生的。 在某些情况下，可能会丢失监视：如果在断开连接的情况下创建并删除了znode，则会丢失尚未创建的znode的监视。</p>
+<p>Watch中分为事件类型和状态类型，事件类型于znode节点相关，状态类型于连接的客户端相关，具体如下</p>
+<table>
+<thead>
+<tr>
+<th>KeeperState</th>
+<th>EventType</th>
+<th>触发条件</th>
+</tr>
+</thead>
+<tbody><tr>
+<td></td>
+<td>None(-1)</td>
+<td>客户端于服务端成功创建连接</td>
+</tr>
+<tr>
+<td>SyncConnected(3)</td>
+<td>NodeCreated(1)</td>
+<td>Watcher监听的对应数据节点被创建</td>
+</tr>
+<tr>
+<td></td>
+<td>NodeDelected(2)</td>
+<td>Watcher监听的对应数据节点被删除</td>
+</tr>
+<tr>
+<td></td>
+<td>NodeDataChanged(3)</td>
+<td>Watcher监听的对应数据节点的数据内容发生变化</td>
+</tr>
+<tr>
+<td></td>
+<td>NodeChildChanged(4)</td>
+<td>Watcher监听的对应数据节点的子节点发生变化</td>
+</tr>
+<tr>
+<td>Disconnected(0)</td>
+<td>None(-1)</td>
+<td>客户端于Zookeeper服务器断开连接</td>
+</tr>
+<tr>
+<td>Expired(-112)</td>
+<td>None(-1)</td>
+<td>会话超时</td>
+</tr>
+<tr>
+<td>AuthFailed(4)</td>
+<td>None(-1)</td>
+<td>权限不足</td>
+</tr>
+</tbody></table>
+<h4 id="Data-Access"><a href="#Data-Access" class="headerlink" title="Data Access"></a>Data Access</h4><p>​        znode上的数据的读写都是原子的，在读取时将会获取与znode关联的所有数据，而在写入时则会替换所有数据，在每个znode中都有一个访问控制列表(access control list)，用于控制访问权限。</p>
+<h3 id="Zookeeper-Stat-Structure"><a href="#Zookeeper-Stat-Structure" class="headerlink" title="Zookeeper Stat Structure"></a>Zookeeper Stat Structure</h3><p>zookeeper中每个znode都会维护一个stat其中每个参数的含义如下</p>
+<ul>
+<li>czxid：引起这个znode创建的zxid，创建节点的事务的zxid</li>
+<li>ctime： znode被创建的毫秒数(从1970年开始)</li>
+<li>mzxid： znode最后更新的zxid</li>
+<li>mtime：znode最后修改的毫秒数(从1970年开始)</li>
+<li>pZxid：znode最后更新的子节点zxid</li>
+<li>cversion ：znode子节点变化号，znode子节点修改次数</li>
+<li>dataversion： znode数据变化号</li>
+<li>aclVersion：znode访问控制列表的变化号</li>
+<li>ephemeralOwner：如果是临时节点，这个是znode拥有者的session id。如果不是临时节点则是0</li>
+<li>dataLength：znode的数据长度</li>
+<li>numChildren：znode子节点数量</li>
+</ul>
+<h2 id="Zookeeper-Session"><a href="#Zookeeper-Session" class="headerlink" title="Zookeeper Session"></a>Zookeeper Session</h2><p>​        ZooKeeper客户端通过使用语言绑定创建服务的句柄来与ZooKeeper服务建立会话。 创建句柄之后，该句柄将开始处于CONNECTING状态，并且客户端库尝试连接到组成ZooKeeper服务的服务器之一，然后将其切换为CONNECTED状态。 在正常操作期间，客户端句柄将处于这两种状态之一。 如果发生不可恢复的错误，例如会话到期或身份验证失败，或者如果应用程序显式关闭了句柄，则该句柄将移至CLOSED状态。 下图显示了ZooKeeper客户端可能的状态转换。</p>
+<p><img src="https://zookeeper.apache.org/doc/current/images/state_dia.jpg" alt=""></p>
+<h2 id="Zookeeper简单操作"><a href="#Zookeeper简单操作" class="headerlink" title="Zookeeper简单操作"></a>Zookeeper简单操作</h2><p>使用zookeeper JavaAPI时首先要在pom中导入zookeeper依赖</p>
+<figure class="highlight xml"><table><tr><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">dependency</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">groupId</span>&gt;</span>org.apache.zookeeper<span class="tag">&lt;/<span class="name">groupId</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">artifactId</span>&gt;</span>zookeeper<span class="tag">&lt;/<span class="name">artifactId</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">version</span>&gt;</span>3.4.14<span class="tag">&lt;/<span class="name">version</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;/<span class="name">dependency</span>&gt;</span></span><br></pre></td></tr></table></figure>
+
+<ul>
+<li><p>创建一个永久znode节点，并打印其中的Zookeeper Stat Structure和数据信息</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">TestService</span> </span>&#123;</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">final</span> String PATH = <span class="string">"/test_zookeeper"</span>;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">main</span><span class="params">(String[] args)</span> </span>&#123;</span><br><span class="line"></span><br><span class="line">        <span class="class"><span class="keyword">class</span> <span class="title">MyWatch</span> <span class="keyword">implements</span> <span class="title">Watcher</span></span>&#123;</span><br><span class="line">            <span class="meta">@Override</span></span><br><span class="line">            <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">process</span><span class="params">(WatchedEvent watchedEvent)</span> </span>&#123;</span><br><span class="line">                System.out.println(<span class="string">"====已经触发了 "</span> + watchedEvent.getType() + <span class="string">" 类型的事件===="</span>);</span><br><span class="line">                System.out.println(<span class="string">"====节点中的路径为："</span> + watchedEvent.getPath() + <span class="string">"===="</span>);</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        MyWatch watch = <span class="keyword">new</span> MyWatch();</span><br><span class="line"><span class="comment">//        MyWatch watch = new MyWatch().getInstance();</span></span><br><span class="line">        <span class="keyword">try</span> &#123;</span><br><span class="line">            ZooKeeper zk = <span class="keyword">new</span> ZooKeeper(<span class="string">"localhost:2181,localhost:2182,localhost:2183"</span>, <span class="number">3000</span>, watch);</span><br><span class="line">            <span class="keyword">if</span> (zk.exists(PATH, <span class="keyword">true</span>) != <span class="keyword">null</span>)&#123;</span><br><span class="line"></span><br><span class="line">                Stat stat = zk.exists(PATH, <span class="keyword">true</span>);</span><br><span class="line">                System.out.println(<span class="string">"stat中的6个属性为"</span>);</span><br><span class="line">                System.out.println(stat.toString());</span><br><span class="line"></span><br><span class="line">                <span class="keyword">byte</span>[] data = zk.getData(PATH, <span class="keyword">null</span>, zk.exists(PATH, <span class="keyword">true</span>));</span><br><span class="line">                System.out.println(PATH + <span class="string">"中的数据为"</span> + <span class="keyword">new</span> String(data));</span><br><span class="line"></span><br><span class="line">                zk.setData(PATH,  <span class="string">"修改数据"</span>.getBytes(), stat.getVersion());</span><br><span class="line">                data = zk.getData(PATH, <span class="keyword">null</span>, zk.exists(PATH, <span class="keyword">true</span>));</span><br><span class="line">                System.out.println(PATH + <span class="string">"修改后的数据为: "</span> + <span class="keyword">new</span> String(data));</span><br><span class="line">                zk.setData(PATH,  <span class="string">"再次修改数据"</span>.getBytes(), zk.exists(PATH, <span class="keyword">true</span>).getVersion());</span><br><span class="line">                data = zk.getData(PATH, <span class="keyword">null</span>, zk.exists(PATH, <span class="keyword">true</span>));</span><br><span class="line">                System.out.println(PATH + <span class="string">"再次修改后的数据为: "</span> + <span class="keyword">new</span> String(data));</span><br><span class="line"></span><br><span class="line"><span class="comment">//                zk.delete(PATH, zk.exists(PATH, true).getVersion());</span></span><br><span class="line">            &#125;<span class="keyword">else</span> &#123;</span><br><span class="line">                zk.create(PATH, (PATH + <span class="string">"中的数据"</span>).getBytes(), ZooDefs.Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);</span><br><span class="line">            &#125;</span><br><span class="line">        &#125; <span class="keyword">catch</span> (IOException | KeeperException | InterruptedException e) &#123;</span><br><span class="line">            e.printStackTrace();</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>第一次执行</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">已经触发了 None 类型的事件</span><br><span class="line">节点中的路径为：null</span><br><span class="line">已经触发了 NodeCreated 类型的事件</span><br><span class="line">节点中的路径为：&#x2F;test_zookeeper</span><br></pre></td></tr></table></figure>
+
+<p>在命令行启动zk的客户端，查看zk中的znode，如下所示</p>
+<p><img src="https://willipic.oss-cn-hangzhou.aliyuncs.com/JavaFoundation/%E5%9C%A8zk%E4%B8%AD%E6%9F%A5%E7%9C%8Bznode.png" alt=""></p>
+<p>再次运行如上代码，输出如下</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">&#x3D;&#x3D;&#x3D;&#x3D;已经触发了 None 类型的事件&#x3D;&#x3D;&#x3D;&#x3D;</span><br><span class="line">&#x3D;&#x3D;&#x3D;&#x3D;节点中的路径为：null&#x3D;&#x3D;&#x3D;&#x3D;</span><br><span class="line">stat中的6个属性为</span><br><span class="line">8589934647,8589934647,1587956249662,1587956249662,0,0,0,0,27,0,8589934647</span><br><span class="line"></span><br><span class="line">&#x2F;test_zookeeper中的数据为&#x2F;test_zookeeper中的数据</span><br><span class="line">&#x3D;&#x3D;&#x3D;&#x3D;已经触发了 NodeDataChanged 类型的事件&#x3D;&#x3D;&#x3D;&#x3D;</span><br><span class="line">&#x3D;&#x3D;&#x3D;&#x3D;节点中的路径为：&#x2F;test_zookeeper&#x3D;&#x3D;&#x3D;&#x3D;</span><br><span class="line">&#x2F;test_zookeeper修改后的数据为: 修改数据</span><br><span class="line">&#x3D;&#x3D;&#x3D;&#x3D;已经触发了 NodeDataChanged 类型的事件&#x3D;&#x3D;&#x3D;&#x3D;</span><br><span class="line">&#x3D;&#x3D;&#x3D;&#x3D;节点中的路径为：&#x2F;test_zookeeper&#x3D;&#x3D;&#x3D;&#x3D;</span><br><span class="line">&#x2F;test_zookeeper再次修改后的数据为: 再次修改数据</span><br></pre></td></tr></table></figure>
+
+<p>在命令行中查看znode中的数据和stat structure</p>
+<p><img src="https://willipic.oss-cn-hangzhou.aliyuncs.com/JavaFoundation/%E6%9F%A5%E7%9C%8Bznode%E4%B8%AD%E7%9A%84%E6%95%B0%E6%8D%AE.png" alt=""></p>
+</li>
+<li><p>接下来验证watch的一次性触发机制，根据前文所述，在执行exist方法时就会触发一次watch，如果需要继续监视znode的变化，必须再新建一个watch，exist方法源码如下，我们在执行一次exist，可以选择是否再创建一个初始watch。</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> Stat <span class="title">exists</span><span class="params">(String path, <span class="keyword">boolean</span> watch)</span> <span class="keyword">throws</span> KeeperException,</span></span><br><span class="line"><span class="function">        InterruptedException</span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">          <span class="comment">// 如果为true，则在执行exist方法后在创建一个watcher，继续监视</span></span><br><span class="line">    <span class="keyword">return</span> exists(path, watch ? watchManager.defaultWatcher : <span class="keyword">null</span>);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">public</span> Stat <span class="title">exists</span><span class="params">(<span class="keyword">final</span> String path, Watcher watcher)</span></span></span><br><span class="line"><span class="function">        <span class="keyword">throws</span> KeeperException, InterruptedException</span></span><br><span class="line"><span class="function">    </span>&#123;</span><br><span class="line">        <span class="keyword">final</span> String clientPath = path;</span><br><span class="line">        PathUtils.validatePath(clientPath);</span><br><span class="line"></span><br><span class="line">        <span class="comment">// the watch contains the un-chroot path</span></span><br><span class="line">        WatchRegistration wcb = <span class="keyword">null</span>;</span><br><span class="line">        <span class="keyword">if</span> (watcher != <span class="keyword">null</span>) &#123;</span><br><span class="line">            wcb = <span class="keyword">new</span> ExistsWatchRegistration(watcher, clientPath);</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="keyword">final</span> String serverPath = prependChroot(clientPath);</span><br><span class="line"></span><br><span class="line">        RequestHeader h = <span class="keyword">new</span> RequestHeader();</span><br><span class="line">        h.setType(ZooDefs.OpCode.exists);</span><br><span class="line">        ExistsRequest request = <span class="keyword">new</span> ExistsRequest();</span><br><span class="line">        request.setPath(serverPath);</span><br><span class="line">        request.setWatch(watcher != <span class="keyword">null</span>);</span><br><span class="line">        SetDataResponse response = <span class="keyword">new</span> SetDataResponse();</span><br><span class="line">        ReplyHeader r = cnxn.submitRequest(h, request, response, wcb);</span><br><span class="line">        <span class="keyword">if</span> (r.getErr() != <span class="number">0</span>) &#123;</span><br><span class="line">            <span class="keyword">if</span> (r.getErr() == KeeperException.Code.NONODE.intValue()) &#123;</span><br><span class="line">                <span class="keyword">return</span> <span class="keyword">null</span>;</span><br><span class="line">            &#125;</span><br><span class="line">            <span class="keyword">throw</span> KeeperException.create(KeeperException.Code.get(r.getErr()),</span><br><span class="line">                    clientPath);</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="keyword">return</span> response.getStat().getCzxid() == -<span class="number">1</span> ? <span class="keyword">null</span> : response.getStat();</span><br><span class="line">    &#125;</span><br></pre></td></tr></table></figure>
+
+<p>我们将代码更改如下</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">TestService</span> </span>&#123;</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">final</span> String PATH = <span class="string">"/test_zookeeper"</span>;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">main</span><span class="params">(String[] args)</span> </span>&#123;</span><br><span class="line"></span><br><span class="line">        <span class="class"><span class="keyword">class</span> <span class="title">MyWatch</span> <span class="keyword">implements</span> <span class="title">Watcher</span></span>&#123;</span><br><span class="line">            <span class="meta">@Override</span></span><br><span class="line">            <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">process</span><span class="params">(WatchedEvent watchedEvent)</span> </span>&#123;</span><br><span class="line">                System.out.println(<span class="string">"====已经触发了 "</span> + watchedEvent.getType() + <span class="string">" 类型的事件===="</span>);</span><br><span class="line">                System.out.println(<span class="string">"====节点中的路径为："</span> + watchedEvent.getPath() + <span class="string">"===="</span>);</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        MyWatch watch = <span class="keyword">new</span> MyWatch();</span><br><span class="line"><span class="comment">//        MyWatch watch = new MyWatch().getInstance();</span></span><br><span class="line">        <span class="keyword">try</span> &#123;</span><br><span class="line">            ZooKeeper zk = <span class="keyword">new</span> ZooKeeper(<span class="string">"localhost:2181,localhost:2182,localhost:2183"</span>, <span class="number">3000</span>, watch);</span><br><span class="line">            <span class="keyword">if</span> (zk.exists(PATH, <span class="keyword">false</span>) != <span class="keyword">null</span>)&#123;</span><br><span class="line"></span><br><span class="line">                Stat stat = zk.exists(PATH, <span class="keyword">false</span>);</span><br><span class="line">                System.out.println(<span class="string">"stat中的6个属性为"</span>);</span><br><span class="line">                System.out.println(stat.toString());</span><br><span class="line"></span><br><span class="line">                <span class="keyword">byte</span>[] data = zk.getData(PATH, <span class="keyword">null</span>, zk.exists(PATH, <span class="keyword">false</span>));</span><br><span class="line">                System.out.println(PATH + <span class="string">"中的数据为"</span> + <span class="keyword">new</span> String(data));</span><br><span class="line"></span><br><span class="line">                zk.setData(PATH,  <span class="string">"修改数据"</span>.getBytes(), stat.getVersion());</span><br><span class="line">                data = zk.getData(PATH, <span class="keyword">null</span>, zk.exists(PATH, <span class="keyword">false</span>));</span><br><span class="line">                System.out.println(PATH + <span class="string">"修改后的数据为: "</span> + <span class="keyword">new</span> String(data));</span><br><span class="line">                zk.setData(PATH,  <span class="string">"再次修改数据"</span>.getBytes(), zk.exists(PATH, <span class="keyword">false</span>).getVersion());</span><br><span class="line">                data = zk.getData(PATH, <span class="keyword">null</span>, zk.exists(PATH, <span class="keyword">false</span>));</span><br><span class="line">                System.out.println(PATH + <span class="string">"再次修改后的数据为: "</span> + <span class="keyword">new</span> String(data));</span><br><span class="line"></span><br><span class="line"><span class="comment">//                zk.delete(PATH, zk.exists(PATH, true).getVersion());</span></span><br><span class="line">            &#125;<span class="keyword">else</span> &#123;</span><br><span class="line">                zk.create(PATH, (PATH + <span class="string">"中的数据"</span>).getBytes(), ZooDefs.Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);</span><br><span class="line">            &#125;</span><br><span class="line">        &#125; <span class="keyword">catch</span> (IOException | KeeperException | InterruptedException e) &#123;</span><br><span class="line">            e.printStackTrace();</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>输出如下，后续的操作没有再触发wathcer</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">&#x3D;&#x3D;&#x3D;&#x3D;已经触发了 None 类型的事件&#x3D;&#x3D;&#x3D;&#x3D;</span><br><span class="line">&#x3D;&#x3D;&#x3D;&#x3D;节点中的路径为：null&#x3D;&#x3D;&#x3D;&#x3D;</span><br><span class="line">stat中的6个属性为</span><br><span class="line">8589934647,8589934655,1587956249662,1587956369218,4,0,0,0,18,0,8589934647</span><br><span class="line"></span><br><span class="line">&#x2F;test_zookeeper中的数据为再次修改数据</span><br><span class="line">&#x2F;test_zookeeper修改后的数据为: 修改数据</span><br><span class="line">&#x2F;test_zookeeper再次修改后的数据为: 再次修改数据</span><br></pre></td></tr></table></figure>
+
+
+
+
+
+</li>
+</ul>
+]]></content>
+      <categories>
+        <category>Zookeeper</category>
+      </categories>
+      <tags>
+        <tag>big data</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>设计模式之代理模式</title>
     <url>/2020/04/21/%E8%AE%BE%E8%AE%A1%E6%A8%A1%E5%BC%8F%E4%B9%8B%E4%BB%A3%E7%90%86%E6%A8%A1%E5%BC%8F/</url>
     <content><![CDATA[<h2 id="代理模式"><a href="#代理模式" class="headerlink" title="代理模式"></a>代理模式</h2><p>本文介绍结构性设计模式中的代理模式</p>

@@ -1,0 +1,765 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 4.2.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon.ico">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon.ico">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"thisiswilli.cn","root":"/","scheme":"Gemini","version":"7.7.1","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":true},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+  </script>
+
+  <meta name="description" content="Zookeeper简介及利用JavaAPI操作本文介绍zookeeper的伪分布式安装，zookeeper中的基本概念以及利用JavaAPI简单操作zookeeper">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Zookeeper简介及JavaAPI简单操作">
+<meta property="og:url" content="https://thisiswilli.cn/2020/04/27/Zookeeper%E7%AE%80%E4%BB%8B%E5%8F%8AJavaAPI%E7%AE%80%E5%8D%95%E6%93%8D%E4%BD%9C/index.html">
+<meta property="og:site_name" content="ThisisWilli">
+<meta property="og:description" content="Zookeeper简介及利用JavaAPI操作本文介绍zookeeper的伪分布式安装，zookeeper中的基本概念以及利用JavaAPI简单操作zookeeper">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://willipic.oss-cn-hangzhou.aliyuncs.com/JavaFoundation/%E6%9F%A5%E7%9C%8Bzookeeper%E7%8A%B6%E6%80%81.png">
+<meta property="og:image" content="https://zookeeper.apache.org/doc/r3.1.2/images/zknamespace.jpg">
+<meta property="og:image" content="https://zookeeper.apache.org/doc/current/images/state_dia.jpg">
+<meta property="og:image" content="https://willipic.oss-cn-hangzhou.aliyuncs.com/JavaFoundation/%E5%9C%A8zk%E4%B8%AD%E6%9F%A5%E7%9C%8Bznode.png">
+<meta property="og:image" content="https://willipic.oss-cn-hangzhou.aliyuncs.com/JavaFoundation/%E6%9F%A5%E7%9C%8Bznode%E4%B8%AD%E7%9A%84%E6%95%B0%E6%8D%AE.png">
+<meta property="article:published_time" content="2020-04-27T06:14:10.000Z">
+<meta property="article:modified_time" content="2020-04-27T06:17:07.315Z">
+<meta property="article:author" content="Willi">
+<meta property="article:tag" content="big data">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://willipic.oss-cn-hangzhou.aliyuncs.com/JavaFoundation/%E6%9F%A5%E7%9C%8Bzookeeper%E7%8A%B6%E6%80%81.png">
+
+<link rel="canonical" href="https://thisiswilli.cn/2020/04/27/Zookeeper%E7%AE%80%E4%BB%8B%E5%8F%8AJavaAPI%E7%AE%80%E5%8D%95%E6%93%8D%E4%BD%9C/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome: false,
+    isPost: true
+  };
+</script>
+
+  <title>Zookeeper简介及JavaAPI简单操作 | ThisisWilli</title>
+  
+
+
+  <script>
+    var _hmt = _hmt || [];
+    (function() {
+      var hm = document.createElement("script");
+      hm.src = "https://hm.baidu.com/hm.js?0dc46e5d0914c07dc8b23b28c12d8fb3";
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(hm, s);
+    })();
+  </script>
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+<link rel="alternate" href="/atom.xml" title="ThisisWilli" type="application/atom+xml">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <div>
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">ThisisWilli</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+        <p class="site-subtitle">Time is now</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+<nav class="site-nav">
+  
+  <ul id="menu" class="menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-fw fa-home"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-fw fa-user"></i>关于</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-fw fa-tags"></i>标签<span class="badge">4</span></a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-fw fa-th"></i>分类<span class="badge">4</span></a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-fw fa-archive"></i>归档<span class="badge">11</span></a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+
+</nav>
+  <div class="site-search">
+    <div class="popup search-popup">
+    <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocorrect="off" autocapitalize="off"
+           placeholder="搜索..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result"></div>
+
+</div>
+<div class="search-pop-overlay"></div>
+
+  </div>
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content">
+            
+
+  <div class="posts-expand">
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block " lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://thisiswilli.cn/2020/04/27/Zookeeper%E7%AE%80%E4%BB%8B%E5%8F%8AJavaAPI%E7%AE%80%E5%8D%95%E6%93%8D%E4%BD%9C/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/xiaolang.jpeg">
+      <meta itemprop="name" content="Willi">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="ThisisWilli">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          Zookeeper简介及JavaAPI简单操作
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+              
+
+              <time title="创建时间：2020-04-27 14:14:10 / 修改时间：14:17:07" itemprop="dateCreated datePublished" datetime="2020-04-27T14:14:10+08:00">2020-04-27</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Zookeeper/" itemprop="url" rel="index"><span itemprop="name">Zookeeper</span></a>
+                </span>
+            </span>
+
+          
+            <span class="post-meta-item" title="阅读次数" id="busuanzi_container_page_pv" style="display: none;">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-eye"></i>
+              </span>
+              <span class="post-meta-item-text">阅读次数：</span>
+              <span id="busuanzi_value_page_pv"></span>
+            </span>
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="fa fa-comment-o"></i>
+      </span>
+      <span class="post-meta-item-text">Valine：</span>
+    
+    <a title="valine" href="/2020/04/27/Zookeeper%E7%AE%80%E4%BB%8B%E5%8F%8AJavaAPI%E7%AE%80%E5%8D%95%E6%93%8D%E4%BD%9C/#valine-comments" itemprop="discussionUrl">
+      <span class="post-comments-count valine-comment-count" data-xid="/2020/04/27/Zookeeper%E7%AE%80%E4%BB%8B%E5%8F%8AJavaAPI%E7%AE%80%E5%8D%95%E6%93%8D%E4%BD%9C/" itemprop="commentCount"></span>
+    </a>
+  </span>
+  
+  <br>
+            <span class="post-meta-item" title="本文字数">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-file-word-o"></i>
+              </span>
+                <span class="post-meta-item-text">本文字数：</span>
+              <span>10k</span>
+            </span>
+            <span class="post-meta-item" title="阅读时长">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-clock-o"></i>
+              </span>
+                <span class="post-meta-item-text">阅读时长 &asymp;</span>
+              <span>9 分钟</span>
+            </span>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h1 id="Zookeeper简介及利用JavaAPI操作"><a href="#Zookeeper简介及利用JavaAPI操作" class="headerlink" title="Zookeeper简介及利用JavaAPI操作"></a>Zookeeper简介及利用JavaAPI操作</h1><p>本文介绍zookeeper的伪分布式安装，zookeeper中的基本概念以及利用JavaAPI简单操作zookeeper</p>
+<a id="more"></a>
+
+<h2 id="zookeeper安装"><a href="#zookeeper安装" class="headerlink" title="zookeeper安装"></a>zookeeper安装</h2><p>Zookeeper主要有以下部署模式</p>
+<ul>
+<li>Standalone模式：单机部署，用于验证zookeeper的功能</li>
+<li>伪集群模式：类似于kafka的单机多broker模式，用java进程模拟一个zookeeper服务，也是单机部署</li>
+<li>集群模式：在多台服务其中部署</li>
+</ul>
+<p>因为没有服务器资源，本文介绍伪集群模式部署，具体步骤如下，本机环境为macos10.15.4</p>
+<ol>
+<li><p>下载zookeeper，可以选择<a href="http://zookeeper.apache.org/releases.html" target="_blank" rel="noopener">官网下载</a>，也可以下载<a href="http://archive.cloudera.com/cdh5/cdh/5/" target="_blank" rel="noopener">cdh版本</a></p>
+</li>
+<li><p>下载到本地之后解压</p>
+<ul>
+<li><p>配置环境变量<code>➜  ~ vim .bash_profile</code></p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">export ZOOKEEPER_HOME&#x3D;your path</span><br><span class="line">export PATH&#x3D;$PATH:$ZOOKEEPER_HOME&#x2F;bin</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>使更改生效<code>➜  ~ source .bash_profile</code></p>
+</li>
+</ul>
+</li>
+<li><p>切换到zookeeper下的conf目录，创建三个配置文件zoo1.cfg，zoo1.cfg，zoo1.cfg</p>
+<p>zookeeper中有三个重要端口</p>
+<ul>
+<li>2181：对cline端提供服务</li>
+<li>3888：选举leader使用</li>
+<li>2888：集群内机器通讯使用（Leader监听此端口）</li>
+</ul>
+<p>本文介绍伪分布式安装，所有这三个端口也应该使用不同的端口号，三个配置文件如下</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br></pre></td><td class="code"><pre><span class="line">zoo1.cfg</span><br><span class="line"># 用于zk节点之间的心跳检测，最小session超时时间是ticktime的两倍</span><br><span class="line">tickTime&#x3D;2000</span><br><span class="line"># Leader服务器等待Follower启动并完成数据同步的时间，默认值10，表示tickTime的10倍</span><br><span class="line">initLimit&#x3D;10</span><br><span class="line"># Leader服务器和Follower之间进行心跳检测的最大延时时间，默认值5，表示tickTime的5倍</span><br><span class="line">syncLimit&#x3D;5</span><br><span class="line"># Zookeeper服务器存储快照文件的目录，必须配置</span><br><span class="line">dataDir&#x3D;&#x2F;BigDataComponent&#x2F;zookeeper&#x2F;data_1</span><br><span class="line"># Zookeeper服务器存储事务日志的目录，默认为dataDir</span><br><span class="line">dataLogDir&#x3D;&#x2F;BigDataComponent&#x2F;zookeeper&#x2F;log_1</span><br><span class="line"># 监听客户端连接的端口</span><br><span class="line">clientPort&#x3D;2181</span><br><span class="line">server.1 &#x3D; localhost:2888:3888</span><br><span class="line">server.2 &#x3D; localhost:2889:3889</span><br><span class="line">server.3 &#x3D; localhost:2890:3890</span><br><span class="line"></span><br><span class="line">zoo2.cfg</span><br><span class="line">tickTime&#x3D;2000</span><br><span class="line">initLimit&#x3D;10</span><br><span class="line">syncLimit&#x3D;5</span><br><span class="line">dataDir&#x3D;&#x2F;BigDataComponent&#x2F;zookeeper&#x2F;data_2</span><br><span class="line">dataLogDir&#x3D;&#x2F;BigDataComponent&#x2F;zookeeper&#x2F;log_2</span><br><span class="line">clientPort&#x3D;2182</span><br><span class="line">server.1 &#x3D; localhost:2888:3888</span><br><span class="line">server.2 &#x3D; localhost:2889:3889</span><br><span class="line">server.3 &#x3D; localhost:2890:3890</span><br><span class="line"></span><br><span class="line">zoo3.cfg</span><br><span class="line">tickTime&#x3D;2000</span><br><span class="line">initLimit&#x3D;10</span><br><span class="line">syncLimit&#x3D;5</span><br><span class="line">dataDir&#x3D;&#x2F;BigDataComponent&#x2F;zookeeper&#x2F;data_3</span><br><span class="line">dataLogDir&#x3D;&#x2F;BigDataComponent&#x2F;zookeeper&#x2F;log_3</span><br><span class="line">clientPort&#x3D;2183</span><br><span class="line">server.1 &#x3D; localhost:2888:3888</span><br><span class="line">server.2 &#x3D; localhost:2889:3889</span><br><span class="line">server.3 &#x3D; localhost:2890:3890</span><br></pre></td></tr></table></figure>
+</li>
+<li><p><strong>在启动之前，还有重要一步</strong>，在三个dataDir文件下创建一个myid文件，分别写入1，2，3对应配置文件中的server.1，server.2，server.3</p>
+</li>
+<li><p>启动zk</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">➜  conf zkServer.sh start $ZOOKEEPER_HOME&#x2F;conf&#x2F;zoo1.cfg</span><br><span class="line">➜  conf zkServer.sh start $ZOOKEEPER_HOME&#x2F;conf&#x2F;zoo2.cfg</span><br><span class="line">➜  conf zkServer.sh start $ZOOKEEPER_HOME&#x2F;conf&#x2F;zoo3.cfg</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>查看jps进程以及每个zookeeper进程的状态，可以看到主从状态，说明安装成功。</p>
+<p><img src="https://willipic.oss-cn-hangzhou.aliyuncs.com/JavaFoundation/%E6%9F%A5%E7%9C%8Bzookeeper%E7%8A%B6%E6%80%81.png" alt=""></p>
+</li>
+</ol>
+<h2 id="zookeeper的数据模型"><a href="#zookeeper的数据模型" class="headerlink" title="zookeeper的数据模型"></a>zookeeper的数据模型</h2><p>​        zookeeper具有分层的名称空间，类似于分布式文件系统。</p>
+<p><img src="https://zookeeper.apache.org/doc/r3.1.2/images/zknamespace.jpg" alt=""></p>
+<h3 id="ZNodes"><a href="#ZNodes" class="headerlink" title="ZNodes"></a>ZNodes</h3><p>​        如上图所示，每个节点都被当作一个znode，每个znode中都维护着一个stat structure和一个时间戳，状态结构包含着节点数据以及acl的版本变更信息，stat structure结合时间戳能够让zookeeper验证数据缓存以及及时更新数据，每当znode中的数据发生改变，版本号就会相应增加， 并且，当客户端执行更新或删除时，它必须提供其更改的znode数据的版本。 如果它提供的版本与数据的实际版本不匹配，则更新将失败。</p>
+<h4 id="Watches"><a href="#Watches" class="headerlink" title="Watches"></a>Watches</h4><p>​       ZooKeeper中的所有读取操作<code>getData()，getChildren()和exist()</code>都可以附属一次watch操作。ZooKeeper对watch的定义为：watch事件<strong>是一次性触发的</strong>，发送给设置watch的客户端，该事件在设置watch的数据更改时发生。 在watch的定义中，需要考虑三个关键点</p>
+<ul>
+<li><strong>一次性触发</strong>：数据更改后，一个watch事件将发送给客户端。 例如，如果客户端执行<code>getData(&quot;/ znode1&quot;,true)</code>，然后/ znode1的数据被更改或删除，则服务端会向客户端返回/ znode1的watch事件。 如果/ znode1再次更改，则除非客户端进行了另一次读取以设置新的watch，否则不会发送任何watch事件。</li>
+<li><strong>watch发送至客户端</strong>：Watch事件是异步发送到客户端。Zookeeper可以保证客户端发送过去的更新顺序是有序的。例如：某个Znode没有设置watcher，那么客户端对这个Znode设置Watcher发送到集群之前，该客户端是感知不到该Znode任何的改变情况的。换个角度来解释：由于Watch有一次性触发的特点，所以在服务器端没有Watcher的情况下，Znode的任何变更就不会通知到客户端。不过，即使某个Znode设置了Watcher，且在Znode有变化的情况下通知到了客户端，但是在客户端接收到这个变化事件，但是还没有再次设置Watcher之前，如果其他客户端对该Znode做了修改，这种情况下，Znode第二次的变化客户端是无法收到通知的。这可能是由于网络延迟或者是其他因素导致，所以我们使用Zookeeper不能期望能够监控到节点每次的变化。<strong>Zookeeper只能保证最终的一致性，而无法保证强一致性。</strong></li>
+<li><strong>设置watch的数据内容</strong>：Znode改变有很多种方式，例如：节点创建，节点删除，节点改变，子节点改变等等。Zookeeper维护了两个Watch列表，一个节点数据Watch列表，另一个是子节点Watch列表。<code>getData()和exists()</code>设置数据Watch，<code>getChildren()</code>设置子节点Watch。两者选其一，可以让我们根据watch的返回结果选择不同的Watch方式，<code>getData()和exists()</code>返回节点的内容，getChildren()返回子节点列表。因此，<code>setData()</code>触发内容Watch，<code>create()</code>触发当前节点的内容Watch或者是其父节点的子节点Watch。<code>delete()</code>同时触发父节点的子节点Watch和内容Watch，以及子节点的内容Watch</li>
+</ul>
+<p>​        Watch在客户端连接到的ZooKeeper服务器上本地维护。 这使watch更加轻量，更容易维护和调度。 当客户端连接到新服务器时，watch将会被任何session事件触发。 当客户端与服务器断开连接时，client不会收到任何watch。 当客户端重新连接时，任何以前注册的watch将被重新注册并在需要时触发。 通常，所有这些都是透明发生的。 在某些情况下，可能会丢失监视：如果在断开连接的情况下创建并删除了znode，则会丢失尚未创建的znode的监视。</p>
+<p>Watch中分为事件类型和状态类型，事件类型于znode节点相关，状态类型于连接的客户端相关，具体如下</p>
+<table>
+<thead>
+<tr>
+<th>KeeperState</th>
+<th>EventType</th>
+<th>触发条件</th>
+</tr>
+</thead>
+<tbody><tr>
+<td></td>
+<td>None(-1)</td>
+<td>客户端于服务端成功创建连接</td>
+</tr>
+<tr>
+<td>SyncConnected(3)</td>
+<td>NodeCreated(1)</td>
+<td>Watcher监听的对应数据节点被创建</td>
+</tr>
+<tr>
+<td></td>
+<td>NodeDelected(2)</td>
+<td>Watcher监听的对应数据节点被删除</td>
+</tr>
+<tr>
+<td></td>
+<td>NodeDataChanged(3)</td>
+<td>Watcher监听的对应数据节点的数据内容发生变化</td>
+</tr>
+<tr>
+<td></td>
+<td>NodeChildChanged(4)</td>
+<td>Watcher监听的对应数据节点的子节点发生变化</td>
+</tr>
+<tr>
+<td>Disconnected(0)</td>
+<td>None(-1)</td>
+<td>客户端于Zookeeper服务器断开连接</td>
+</tr>
+<tr>
+<td>Expired(-112)</td>
+<td>None(-1)</td>
+<td>会话超时</td>
+</tr>
+<tr>
+<td>AuthFailed(4)</td>
+<td>None(-1)</td>
+<td>权限不足</td>
+</tr>
+</tbody></table>
+<h4 id="Data-Access"><a href="#Data-Access" class="headerlink" title="Data Access"></a>Data Access</h4><p>​        znode上的数据的读写都是原子的，在读取时将会获取与znode关联的所有数据，而在写入时则会替换所有数据，在每个znode中都有一个访问控制列表(access control list)，用于控制访问权限。</p>
+<h3 id="Zookeeper-Stat-Structure"><a href="#Zookeeper-Stat-Structure" class="headerlink" title="Zookeeper Stat Structure"></a>Zookeeper Stat Structure</h3><p>zookeeper中每个znode都会维护一个stat其中每个参数的含义如下</p>
+<ul>
+<li>czxid：引起这个znode创建的zxid，创建节点的事务的zxid</li>
+<li>ctime： znode被创建的毫秒数(从1970年开始)</li>
+<li>mzxid： znode最后更新的zxid</li>
+<li>mtime：znode最后修改的毫秒数(从1970年开始)</li>
+<li>pZxid：znode最后更新的子节点zxid</li>
+<li>cversion ：znode子节点变化号，znode子节点修改次数</li>
+<li>dataversion： znode数据变化号</li>
+<li>aclVersion：znode访问控制列表的变化号</li>
+<li>ephemeralOwner：如果是临时节点，这个是znode拥有者的session id。如果不是临时节点则是0</li>
+<li>dataLength：znode的数据长度</li>
+<li>numChildren：znode子节点数量</li>
+</ul>
+<h2 id="Zookeeper-Session"><a href="#Zookeeper-Session" class="headerlink" title="Zookeeper Session"></a>Zookeeper Session</h2><p>​        ZooKeeper客户端通过使用语言绑定创建服务的句柄来与ZooKeeper服务建立会话。 创建句柄之后，该句柄将开始处于CONNECTING状态，并且客户端库尝试连接到组成ZooKeeper服务的服务器之一，然后将其切换为CONNECTED状态。 在正常操作期间，客户端句柄将处于这两种状态之一。 如果发生不可恢复的错误，例如会话到期或身份验证失败，或者如果应用程序显式关闭了句柄，则该句柄将移至CLOSED状态。 下图显示了ZooKeeper客户端可能的状态转换。</p>
+<p><img src="https://zookeeper.apache.org/doc/current/images/state_dia.jpg" alt=""></p>
+<h2 id="Zookeeper简单操作"><a href="#Zookeeper简单操作" class="headerlink" title="Zookeeper简单操作"></a>Zookeeper简单操作</h2><p>使用zookeeper JavaAPI时首先要在pom中导入zookeeper依赖</p>
+<figure class="highlight xml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">dependency</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">groupId</span>&gt;</span>org.apache.zookeeper<span class="tag">&lt;/<span class="name">groupId</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">artifactId</span>&gt;</span>zookeeper<span class="tag">&lt;/<span class="name">artifactId</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">version</span>&gt;</span>3.4.14<span class="tag">&lt;/<span class="name">version</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;/<span class="name">dependency</span>&gt;</span></span><br></pre></td></tr></table></figure>
+
+<ul>
+<li><p>创建一个永久znode节点，并打印其中的Zookeeper Stat Structure和数据信息</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">TestService</span> </span>&#123;</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">final</span> String PATH = <span class="string">"/test_zookeeper"</span>;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">main</span><span class="params">(String[] args)</span> </span>&#123;</span><br><span class="line"></span><br><span class="line">        <span class="class"><span class="keyword">class</span> <span class="title">MyWatch</span> <span class="keyword">implements</span> <span class="title">Watcher</span></span>&#123;</span><br><span class="line">            <span class="meta">@Override</span></span><br><span class="line">            <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">process</span><span class="params">(WatchedEvent watchedEvent)</span> </span>&#123;</span><br><span class="line">                System.out.println(<span class="string">"====已经触发了 "</span> + watchedEvent.getType() + <span class="string">" 类型的事件===="</span>);</span><br><span class="line">                System.out.println(<span class="string">"====节点中的路径为："</span> + watchedEvent.getPath() + <span class="string">"===="</span>);</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        MyWatch watch = <span class="keyword">new</span> MyWatch();</span><br><span class="line"><span class="comment">//        MyWatch watch = new MyWatch().getInstance();</span></span><br><span class="line">        <span class="keyword">try</span> &#123;</span><br><span class="line">            ZooKeeper zk = <span class="keyword">new</span> ZooKeeper(<span class="string">"localhost:2181,localhost:2182,localhost:2183"</span>, <span class="number">3000</span>, watch);</span><br><span class="line">            <span class="keyword">if</span> (zk.exists(PATH, <span class="keyword">true</span>) != <span class="keyword">null</span>)&#123;</span><br><span class="line"></span><br><span class="line">                Stat stat = zk.exists(PATH, <span class="keyword">true</span>);</span><br><span class="line">                System.out.println(<span class="string">"stat中的6个属性为"</span>);</span><br><span class="line">                System.out.println(stat.toString());</span><br><span class="line"></span><br><span class="line">                <span class="keyword">byte</span>[] data = zk.getData(PATH, <span class="keyword">null</span>, zk.exists(PATH, <span class="keyword">true</span>));</span><br><span class="line">                System.out.println(PATH + <span class="string">"中的数据为"</span> + <span class="keyword">new</span> String(data));</span><br><span class="line"></span><br><span class="line">                zk.setData(PATH,  <span class="string">"修改数据"</span>.getBytes(), stat.getVersion());</span><br><span class="line">                data = zk.getData(PATH, <span class="keyword">null</span>, zk.exists(PATH, <span class="keyword">true</span>));</span><br><span class="line">                System.out.println(PATH + <span class="string">"修改后的数据为: "</span> + <span class="keyword">new</span> String(data));</span><br><span class="line">                zk.setData(PATH,  <span class="string">"再次修改数据"</span>.getBytes(), zk.exists(PATH, <span class="keyword">true</span>).getVersion());</span><br><span class="line">                data = zk.getData(PATH, <span class="keyword">null</span>, zk.exists(PATH, <span class="keyword">true</span>));</span><br><span class="line">                System.out.println(PATH + <span class="string">"再次修改后的数据为: "</span> + <span class="keyword">new</span> String(data));</span><br><span class="line"></span><br><span class="line"><span class="comment">//                zk.delete(PATH, zk.exists(PATH, true).getVersion());</span></span><br><span class="line">            &#125;<span class="keyword">else</span> &#123;</span><br><span class="line">                zk.create(PATH, (PATH + <span class="string">"中的数据"</span>).getBytes(), ZooDefs.Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);</span><br><span class="line">            &#125;</span><br><span class="line">        &#125; <span class="keyword">catch</span> (IOException | KeeperException | InterruptedException e) &#123;</span><br><span class="line">            e.printStackTrace();</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>第一次执行</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">已经触发了 None 类型的事件</span><br><span class="line">节点中的路径为：null</span><br><span class="line">已经触发了 NodeCreated 类型的事件</span><br><span class="line">节点中的路径为：&#x2F;test_zookeeper</span><br></pre></td></tr></table></figure>
+
+<p>在命令行启动zk的客户端，查看zk中的znode，如下所示</p>
+<p><img src="https://willipic.oss-cn-hangzhou.aliyuncs.com/JavaFoundation/%E5%9C%A8zk%E4%B8%AD%E6%9F%A5%E7%9C%8Bznode.png" alt=""></p>
+<p>再次运行如上代码，输出如下</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">&#x3D;&#x3D;&#x3D;&#x3D;已经触发了 None 类型的事件&#x3D;&#x3D;&#x3D;&#x3D;</span><br><span class="line">&#x3D;&#x3D;&#x3D;&#x3D;节点中的路径为：null&#x3D;&#x3D;&#x3D;&#x3D;</span><br><span class="line">stat中的6个属性为</span><br><span class="line">8589934647,8589934647,1587956249662,1587956249662,0,0,0,0,27,0,8589934647</span><br><span class="line"></span><br><span class="line">&#x2F;test_zookeeper中的数据为&#x2F;test_zookeeper中的数据</span><br><span class="line">&#x3D;&#x3D;&#x3D;&#x3D;已经触发了 NodeDataChanged 类型的事件&#x3D;&#x3D;&#x3D;&#x3D;</span><br><span class="line">&#x3D;&#x3D;&#x3D;&#x3D;节点中的路径为：&#x2F;test_zookeeper&#x3D;&#x3D;&#x3D;&#x3D;</span><br><span class="line">&#x2F;test_zookeeper修改后的数据为: 修改数据</span><br><span class="line">&#x3D;&#x3D;&#x3D;&#x3D;已经触发了 NodeDataChanged 类型的事件&#x3D;&#x3D;&#x3D;&#x3D;</span><br><span class="line">&#x3D;&#x3D;&#x3D;&#x3D;节点中的路径为：&#x2F;test_zookeeper&#x3D;&#x3D;&#x3D;&#x3D;</span><br><span class="line">&#x2F;test_zookeeper再次修改后的数据为: 再次修改数据</span><br></pre></td></tr></table></figure>
+
+<p>在命令行中查看znode中的数据和stat structure</p>
+<p><img src="https://willipic.oss-cn-hangzhou.aliyuncs.com/JavaFoundation/%E6%9F%A5%E7%9C%8Bznode%E4%B8%AD%E7%9A%84%E6%95%B0%E6%8D%AE.png" alt=""></p>
+</li>
+<li><p>接下来验证watch的一次性触发机制，根据前文所述，在执行exist方法时就会触发一次watch，如果需要继续监视znode的变化，必须再新建一个watch，exist方法源码如下，我们在执行一次exist，可以选择是否再创建一个初始watch。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> Stat <span class="title">exists</span><span class="params">(String path, <span class="keyword">boolean</span> watch)</span> <span class="keyword">throws</span> KeeperException,</span></span><br><span class="line"><span class="function">        InterruptedException</span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">          <span class="comment">// 如果为true，则在执行exist方法后在创建一个watcher，继续监视</span></span><br><span class="line">    <span class="keyword">return</span> exists(path, watch ? watchManager.defaultWatcher : <span class="keyword">null</span>);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">public</span> Stat <span class="title">exists</span><span class="params">(<span class="keyword">final</span> String path, Watcher watcher)</span></span></span><br><span class="line"><span class="function">        <span class="keyword">throws</span> KeeperException, InterruptedException</span></span><br><span class="line"><span class="function">    </span>&#123;</span><br><span class="line">        <span class="keyword">final</span> String clientPath = path;</span><br><span class="line">        PathUtils.validatePath(clientPath);</span><br><span class="line"></span><br><span class="line">        <span class="comment">// the watch contains the un-chroot path</span></span><br><span class="line">        WatchRegistration wcb = <span class="keyword">null</span>;</span><br><span class="line">        <span class="keyword">if</span> (watcher != <span class="keyword">null</span>) &#123;</span><br><span class="line">            wcb = <span class="keyword">new</span> ExistsWatchRegistration(watcher, clientPath);</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="keyword">final</span> String serverPath = prependChroot(clientPath);</span><br><span class="line"></span><br><span class="line">        RequestHeader h = <span class="keyword">new</span> RequestHeader();</span><br><span class="line">        h.setType(ZooDefs.OpCode.exists);</span><br><span class="line">        ExistsRequest request = <span class="keyword">new</span> ExistsRequest();</span><br><span class="line">        request.setPath(serverPath);</span><br><span class="line">        request.setWatch(watcher != <span class="keyword">null</span>);</span><br><span class="line">        SetDataResponse response = <span class="keyword">new</span> SetDataResponse();</span><br><span class="line">        ReplyHeader r = cnxn.submitRequest(h, request, response, wcb);</span><br><span class="line">        <span class="keyword">if</span> (r.getErr() != <span class="number">0</span>) &#123;</span><br><span class="line">            <span class="keyword">if</span> (r.getErr() == KeeperException.Code.NONODE.intValue()) &#123;</span><br><span class="line">                <span class="keyword">return</span> <span class="keyword">null</span>;</span><br><span class="line">            &#125;</span><br><span class="line">            <span class="keyword">throw</span> KeeperException.create(KeeperException.Code.get(r.getErr()),</span><br><span class="line">                    clientPath);</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="keyword">return</span> response.getStat().getCzxid() == -<span class="number">1</span> ? <span class="keyword">null</span> : response.getStat();</span><br><span class="line">    &#125;</span><br></pre></td></tr></table></figure>
+
+<p>我们将代码更改如下</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">TestService</span> </span>&#123;</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">final</span> String PATH = <span class="string">"/test_zookeeper"</span>;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">main</span><span class="params">(String[] args)</span> </span>&#123;</span><br><span class="line"></span><br><span class="line">        <span class="class"><span class="keyword">class</span> <span class="title">MyWatch</span> <span class="keyword">implements</span> <span class="title">Watcher</span></span>&#123;</span><br><span class="line">            <span class="meta">@Override</span></span><br><span class="line">            <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">process</span><span class="params">(WatchedEvent watchedEvent)</span> </span>&#123;</span><br><span class="line">                System.out.println(<span class="string">"====已经触发了 "</span> + watchedEvent.getType() + <span class="string">" 类型的事件===="</span>);</span><br><span class="line">                System.out.println(<span class="string">"====节点中的路径为："</span> + watchedEvent.getPath() + <span class="string">"===="</span>);</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        MyWatch watch = <span class="keyword">new</span> MyWatch();</span><br><span class="line"><span class="comment">//        MyWatch watch = new MyWatch().getInstance();</span></span><br><span class="line">        <span class="keyword">try</span> &#123;</span><br><span class="line">            ZooKeeper zk = <span class="keyword">new</span> ZooKeeper(<span class="string">"localhost:2181,localhost:2182,localhost:2183"</span>, <span class="number">3000</span>, watch);</span><br><span class="line">            <span class="keyword">if</span> (zk.exists(PATH, <span class="keyword">false</span>) != <span class="keyword">null</span>)&#123;</span><br><span class="line"></span><br><span class="line">                Stat stat = zk.exists(PATH, <span class="keyword">false</span>);</span><br><span class="line">                System.out.println(<span class="string">"stat中的6个属性为"</span>);</span><br><span class="line">                System.out.println(stat.toString());</span><br><span class="line"></span><br><span class="line">                <span class="keyword">byte</span>[] data = zk.getData(PATH, <span class="keyword">null</span>, zk.exists(PATH, <span class="keyword">false</span>));</span><br><span class="line">                System.out.println(PATH + <span class="string">"中的数据为"</span> + <span class="keyword">new</span> String(data));</span><br><span class="line"></span><br><span class="line">                zk.setData(PATH,  <span class="string">"修改数据"</span>.getBytes(), stat.getVersion());</span><br><span class="line">                data = zk.getData(PATH, <span class="keyword">null</span>, zk.exists(PATH, <span class="keyword">false</span>));</span><br><span class="line">                System.out.println(PATH + <span class="string">"修改后的数据为: "</span> + <span class="keyword">new</span> String(data));</span><br><span class="line">                zk.setData(PATH,  <span class="string">"再次修改数据"</span>.getBytes(), zk.exists(PATH, <span class="keyword">false</span>).getVersion());</span><br><span class="line">                data = zk.getData(PATH, <span class="keyword">null</span>, zk.exists(PATH, <span class="keyword">false</span>));</span><br><span class="line">                System.out.println(PATH + <span class="string">"再次修改后的数据为: "</span> + <span class="keyword">new</span> String(data));</span><br><span class="line"></span><br><span class="line"><span class="comment">//                zk.delete(PATH, zk.exists(PATH, true).getVersion());</span></span><br><span class="line">            &#125;<span class="keyword">else</span> &#123;</span><br><span class="line">                zk.create(PATH, (PATH + <span class="string">"中的数据"</span>).getBytes(), ZooDefs.Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);</span><br><span class="line">            &#125;</span><br><span class="line">        &#125; <span class="keyword">catch</span> (IOException | KeeperException | InterruptedException e) &#123;</span><br><span class="line">            e.printStackTrace();</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>输出如下，后续的操作没有再触发wathcer</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">&#x3D;&#x3D;&#x3D;&#x3D;已经触发了 None 类型的事件&#x3D;&#x3D;&#x3D;&#x3D;</span><br><span class="line">&#x3D;&#x3D;&#x3D;&#x3D;节点中的路径为：null&#x3D;&#x3D;&#x3D;&#x3D;</span><br><span class="line">stat中的6个属性为</span><br><span class="line">8589934647,8589934655,1587956249662,1587956369218,4,0,0,0,18,0,8589934647</span><br><span class="line"></span><br><span class="line">&#x2F;test_zookeeper中的数据为再次修改数据</span><br><span class="line">&#x2F;test_zookeeper修改后的数据为: 修改数据</span><br><span class="line">&#x2F;test_zookeeper再次修改后的数据为: 再次修改数据</span><br></pre></td></tr></table></figure>
+
+
+
+
+
+</li>
+</ul>
+
+    </div>
+
+    
+    
+    
+        
+
+<div>
+<ul class="post-copyright">
+  <li class="post-copyright-author">
+    <strong>本文作者： </strong>Willi
+  </li>
+  <li class="post-copyright-link">
+    <strong>本文链接：</strong>
+    <a href="https://thisiswilli.cn/2020/04/27/Zookeeper%E7%AE%80%E4%BB%8B%E5%8F%8AJavaAPI%E7%AE%80%E5%8D%95%E6%93%8D%E4%BD%9C/" title="Zookeeper简介及JavaAPI简单操作">https://thisiswilli.cn/2020/04/27/Zookeeper简介及JavaAPI简单操作/</a>
+  </li>
+  <li class="post-copyright-license">
+    <strong>版权声明： </strong>本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/zh-Hans" rel="noopener" target="_blank"><i class="fa fa-fw fa-creative-commons"></i>BY-NC-SA</a> 许可协议。转载请注明出处！
+  </li>
+</ul>
+</div>
+
+      <div>
+      
+        
+      
+      </div>
+
+      <div>
+        
+        <div>
+    
+        <div style="text-align:center;color: #ccc;font-size:14px;">
+            -------------本文结束
+            <i class="fa fa-paw"></i>
+            感谢您的阅读-------------
+        </div>
+    
+</div>
+
+        
+      </div>
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/big-data/" rel="tag"># big data</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2020/04/21/%E8%AE%BE%E8%AE%A1%E6%A8%A1%E5%BC%8F%E4%B9%8B%E4%BB%A3%E7%90%86%E6%A8%A1%E5%BC%8F/" rel="prev" title="设计模式之代理模式">
+      <i class="fa fa-chevron-left"></i> 设计模式之代理模式
+    </a></div>
+      <div class="post-nav-item"></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+  </div>
+
+
+          </div>
+          
+    <div class="comments" id="valine-comments"></div>
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let activeClass = CONFIG.comments.activeClass;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#Zookeeper简介及利用JavaAPI操作"><span class="nav-number">1.</span> <span class="nav-text">Zookeeper简介及利用JavaAPI操作</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#zookeeper安装"><span class="nav-number">1.1.</span> <span class="nav-text">zookeeper安装</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#zookeeper的数据模型"><span class="nav-number">1.2.</span> <span class="nav-text">zookeeper的数据模型</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#ZNodes"><span class="nav-number">1.2.1.</span> <span class="nav-text">ZNodes</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#Watches"><span class="nav-number">1.2.1.1.</span> <span class="nav-text">Watches</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#Data-Access"><span class="nav-number">1.2.1.2.</span> <span class="nav-text">Data Access</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Zookeeper-Stat-Structure"><span class="nav-number">1.2.2.</span> <span class="nav-text">Zookeeper Stat Structure</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Zookeeper-Session"><span class="nav-number">1.3.</span> <span class="nav-text">Zookeeper Session</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Zookeeper简单操作"><span class="nav-number">1.4.</span> <span class="nav-text">Zookeeper简单操作</span></a></li></ol></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Willi"
+      src="/images/xiaolang.jpeg">
+  <p class="site-author-name" itemprop="name">Willi</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">11</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">4</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">4</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+        <a href="https://github.com/ThisisWilli" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;ThisisWilli" rel="noopener" target="_blank"><i class="fa fa-fw fa-github"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="mailto:295258774@qq.com" title="E-Mail → mailto:295258774@qq.com" rel="noopener" target="_blank"><i class="fa fa-fw fa-envelope"></i>E-Mail</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://www.instagram.com/wever42/" title="Instagram → https:&#x2F;&#x2F;www.instagram.com&#x2F;wever42&#x2F;" rel="noopener" target="_blank"><i class="fa fa-fw fa-instagram"></i>Instagram</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://blog.csdn.net/Jerseywwwwei" title="CSDN → https:&#x2F;&#x2F;blog.csdn.net&#x2F;Jerseywwwwei" rel="noopener" target="_blank"><i class="fa fa-fw fa-book"></i>CSDN</a>
+      </span>
+  </div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+<div class="copyright">
+  
+  &copy; 2018 – 
+  <span itemprop="copyrightYear">2020</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Willi</span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-area-chart"></i>
+    </span>
+      <span class="post-meta-item-text">站点总字数：</span>
+    <span title="站点总字数">75k</span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-coffee"></i>
+    </span>
+      <span class="post-meta-item-text">站点阅读时长 &asymp;</span>
+    <span title="站点阅读时长">1:09</span>
+</div>
+
+        
+<div class="busuanzi-count">
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+  
+    <span class="post-meta-item-icon">
+      <i class="fa fa-user"></i>
+    </span>
+    <span class="site-uv" title="总访客量">
+      &nbsp;本站访客数&nbsp;<span class="busuanzi-value" id="busuanzi_value_site_uv"></span>人</span>	
+    </span>
+  
+
+  
+    <span class="post-meta-divider">|</span>
+  
+
+  
+    <span class="post-meta-item-icon">
+      <i class="fa fa-eye"></i>
+    </span>
+    <span class="site-pv" title="总访问量">
+      &nbsp;本站总访问量&nbsp;<span class="busuanzi-value" id="busuanzi_value_site_pv"></span>次</span>	
+    </span>
+  
+</div>
+
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  
+  <script color='0,0,255' opacity='0.5' zIndex='-1' count='99' src="/lib/canvas-nest/canvas-nest.min.js"></script>
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/pisces.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+  
+<script src="/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+
+<script>
+NexT.utils.loadComments(document.querySelector('#valine-comments'), () => {
+  NexT.utils.getScript('//unpkg.com/valine/dist/Valine.min.js', () => {
+    var GUEST = ['nick', 'mail', 'link'];
+    var guest = 'nick,mail,link';
+    guest = guest.split(',').filter(item => {
+      return GUEST.includes(item);
+    });
+    new Valine({
+      el         : '#valine-comments',
+      verify     : false,
+      notify     : false,
+      appId      : 'WpktFBGS1tJFUonSWplyupKR-gzGzoHsz',
+      appKey     : '0AnoRoyQ9ljCCexp2J2QmvBn',
+      placeholder: "Just go go",
+      avatar     : 'mm',
+      meta       : guest,
+      pageSize   : '10' || 10,
+      visitor    : false,
+      lang       : '' || 'zh-cn',
+      path       : location.pathname,
+      recordIP   : false,
+      serverURLs : ''
+    });
+  }, window.Valine);
+});
+</script>
+
+  <div class="bg_content">
+  <canvas id="canvas"></canvas>
+</div>
+<script src="/live2dw/lib/L2Dwidget.min.js?094cbace49a39548bed64abff5988b05"></script><script>L2Dwidget.init({"log":false,"pluginJsPath":"lib/","pluginModelPath":"assets/","pluginRootPath":"live2dw/","tagMode":false});</script></body>
+</html>
+<script type="text/javascript" src="/js/src/dynamic_bg.js"></script>
