@@ -30,9 +30,10 @@
 <h2 id="踩过的坑"><a href="#踩过的坑" class="headerlink" title="踩过的坑"></a>踩过的坑</h2><p>看上去简简单单几步就完成了，然后并不是，接下来附上踩过的坑以及解决方法</p>
 <h3 id="idea中plugins的marketplace直接打不开"><a href="#idea中plugins的marketplace直接打不开" class="headerlink" title="idea中plugins的marketplace直接打不开"></a>idea中plugins的marketplace直接打不开</h3><p>​        在idea中使用lombok需要在plugins中的marketplace中下载插件，然而我下载时marketplace迟迟无法连接上</p>
 <p>​        我们需要在设置中的Appearance &amp; Behavior –&gt;  System Settings –&gt; Http Proxy中选择Auto-detect proxy settings勾选Automatic proxy configuration URL选项并填写url为<a href="http://127.0.0.1:1080" target="_blank" rel="noopener">http://127.0.0.1:1080</a></p>
+<p>重启idea</p>
 <p><img src="https://willipic.oss-cn-hangzhou.aliyuncs.com/JavaFoundation/%E8%A7%A3%E5%86%B3marketplace%E6%89%93%E4%B8%8D%E5%BC%80.png" alt=""></p>
 <h3 id="代码运行成功，但是不显示日志信息"><a href="#代码运行成功，但是不显示日志信息" class="headerlink" title="代码运行成功，但是不显示日志信息"></a>代码运行成功，但是不显示日志信息</h3><p>​        也是很邪门的一种情况，代码没错，但是不显示log打印的信息。</p>
-<p>​        解决方案为，在Build,Execution,Deployment–&gt;compiler–&gt;Annotation Processors中勾选Enable annotation processing</p>
+<p>​        解决方案为，在Build,Execution,Deployment–&gt;compiler–&gt;Annotation Processors中勾选Enable annotation processing，重启idea。</p>
 <p><img src="https://willipic.oss-cn-hangzhou.aliyuncs.com/JavaFoundation/%E5%BC%80%E5%90%AF%E6%B3%A8%E8%A7%A3.png" alt=""></p>
 <h2 id="多个Slf4j冲突"><a href="#多个Slf4j冲突" class="headerlink" title="多个Slf4j冲突"></a>多个Slf4j冲突</h2><p>报错信息如下</p>
 <figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">SLF4J Warning: Class Path Contains Multiple SLF4J Bindings</span><br><span class="line">.....</span><br></pre></td></tr></table></figure>
@@ -378,8 +379,8 @@
         <category>Java并发</category>
       </categories>
       <tags>
-        <tag>Java</tag>
         <tag>并发</tag>
+        <tag>Java</tag>
       </tags>
   </entry>
   <entry>
