@@ -1,6 +1,105 @@
 <?xml version="1.0" encoding="utf-8"?>
 <search>
   <entry>
+    <title>kafka架构概述</title>
+    <url>/2020/06/16/kafka%E6%9E%B6%E6%9E%84%E6%A6%82%E8%BF%B0/</url>
+    <content><![CDATA[<h1 id="kafka架构概述"><a href="#kafka架构概述" class="headerlink" title="kafka架构概述"></a>kafka架构概述</h1><p>本文简要介绍kafka架构的基本组成部分</p>
+<a id="more"></a>
+<h2 id="主题层"><a href="#主题层" class="headerlink" title="主题层"></a>主题层</h2><p>Topic、Partition、Replica是kafka存储、消费、生产数据的重要组成部分</p>
+<h3 id="Topic"><a href="#Topic" class="headerlink" title="Topic"></a>Topic</h3><p>​        在Kafka中，<strong>发布订阅的对象是主题Topic</strong>，你可以为每一类数据创建一个Topic，类似于数据库中的表，或者文件系统中的一个文件目录。</p>
+<h3 id="Partition"><a href="#Partition" class="headerlink" title="Partition"></a>Partition</h3><p><img src="https://kafka.apache.org/25/images/log_anatomy.png" alt=""></p>
+<h4 id="为什么要将Topic分为多个partition"><a href="#为什么要将Topic分为多个partition" class="headerlink" title="为什么要将Topic分为多个partition"></a>为什么要将Topic分为多个partition</h4><ul>
+<li>实现数据冗余，容错是分布式系统需要考虑的主要因素之一，可以将每份数据的副本放置到同一topic的不同分区下，避免数据丢失</li>
+<li>解决伸缩性问题，如果一个topic只有一个partition，那么当数据量很大时，积累了太多数据，以致整个节点都无法容纳，那么就需要将topic划分为不同的partition并放置在不同的节点上。</li>
+<li>提高吞吐量，kafka只允许单个consumer对单个partition进行消费，因此，在consumer端，consumer的消费并行度完全依赖于topic中partition的数量，通常情况下，一个kafka集群中partition数量越多，意味着吞吐量的上限越高</li>
+</ul>
+<h4 id="partition的结构"><a href="#partition的结构" class="headerlink" title="partition的结构"></a>partition的结构</h4><ul>
+<li><p>查看kafka集群中每个topic的详细信息</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">[root@node01 bin]# .&#x2F;kafka-topics.sh --zookeeper node02:2181,node03:2181,node04:2181 --describe</span><br></pre></td></tr></table></figure>
+
+<p>输出如下</p>
+<p><img src="https://willipic.oss-cn-hangzhou.aliyuncs.com/Kafka/%E6%9F%A5%E7%9C%8Bkafka%E9%9B%86%E7%BE%A4%E4%B8%ADtopic%E7%9A%84%E8%AF%A6%E7%BB%86%E4%BF%A1%E6%81%AF.png" alt=""></p>
+</li>
+<li><p>server.properties中配置了kafka日志文件的地址，根据这个地址，查看每个topic在log中的信息</p>
+<p><img src="https://willipic.oss-cn-hangzhou.aliyuncs.com/Kafka/%E6%9F%A5%E7%9C%8Bkafka%E9%9B%86%E7%BE%A4%E4%B8%AD%E7%9A%84%E6%97%A5%E5%BF%97%E4%BF%A1%E6%81%AF.png" alt=""></p>
+</li>
+<li><p>查看文件夹中的信息，可以看到其中包含数据的日志文件以及索引文件</p>
+<p><img src="https://willipic.oss-cn-hangzhou.aliyuncs.com/Kafka/%E6%9F%A5%E7%9C%8Bkafka%E9%9B%86%E7%BE%A4%E4%B8%ADtopic%E7%9A%84%E8%AF%A6%E7%BB%86%E4%BF%A1%E6%81%AF.png" alt=""></p>
+</li>
+<li><p>下图表示一个consumer是如何根据offset在log文件中查找消息的</p>
+<p><img src="https://img-blog.csdn.net/20150121164203539" alt=""></p>
+</li>
+</ul>
+<h4 id="partition的顺序性"><a href="#partition的顺序性" class="headerlink" title="partition的顺序性"></a>partition的顺序性</h4><p>如上图所示，每个partition内部保证消息的顺序，<strong>但是分区之间是不保证顺序的</strong></p>
+<h3 id="Replica"><a href="#Replica" class="headerlink" title="Replica"></a>Replica</h3><ul>
+<li>每个partition可以配置多个副本，kafka定义了两类副本：领导者副本和跟随着副本</li>
+<li>但是只有1个replica可以对外提供服务，与客户端程序进行交互，producer都是往leader replica中写入消息consumer也都是从leader replica中写入消息</li>
+<li>follow replica不能对外界提供服务，只是请求leader replica将最新的消息发送给他，保持与leader replica的消息同步</li>
+</ul>
+<h2 id="消息层"><a href="#消息层" class="headerlink" title="消息层"></a>消息层</h2><h3 id="消息key"><a href="#消息key" class="headerlink" title="消息key"></a>消息key</h3><p>​        发送消息时指定key，这个key也是一个字符数组。key用来确定消息具体写入哪一个分区，kafka的java api中send方法源码如下</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> Future&lt;RecordMetadata&gt; <span class="title">send</span><span class="params">(ProducerRecord&lt;K, V&gt; record, Callback callback)</span> </span>&#123;</span><br><span class="line">        <span class="comment">// intercept the record, which can be potentially modified; this method does not throw exceptions</span></span><br><span class="line">        ProducerRecord&lt;K, V&gt; interceptedRecord = <span class="keyword">this</span>.interceptors == <span class="keyword">null</span> ? record : <span class="keyword">this</span>.interceptors.onSend(record);</span><br><span class="line">        <span class="keyword">return</span> doSend(interceptedRecord, callback);</span><br><span class="line">    &#125;</span><br></pre></td></tr></table></figure>
+
+<p>ProducerRecord的源码如下</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment">     * Creates a record with a specified timestamp to be sent to a specified topic and partition</span></span><br><span class="line"><span class="comment">     * </span></span><br><span class="line"><span class="comment">     * <span class="doctag">@param</span> topic The topic the record will be appended to</span></span><br><span class="line"><span class="comment">     * <span class="doctag">@param</span> partition The partition to which the record should be sent</span></span><br><span class="line"><span class="comment">     * <span class="doctag">@param</span> timestamp The timestamp of the record</span></span><br><span class="line"><span class="comment">     * <span class="doctag">@param</span> key The key that will be included in the record</span></span><br><span class="line"><span class="comment">     * <span class="doctag">@param</span> value The record contents</span></span><br><span class="line"><span class="comment">     * <span class="doctag">@param</span> headers the headers that will be included in the record</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="title">ProducerRecord</span><span class="params">(String topic, Integer partition, Long timestamp, K key, V value, Iterable&lt;Header&gt; headers)</span> </span>&#123;</span><br><span class="line">        <span class="keyword">if</span> (topic == <span class="keyword">null</span>)</span><br><span class="line">            <span class="keyword">throw</span> <span class="keyword">new</span> IllegalArgumentException(<span class="string">"Topic cannot be null."</span>);</span><br><span class="line">        <span class="keyword">if</span> (timestamp != <span class="keyword">null</span> &amp;&amp; timestamp &lt; <span class="number">0</span>)</span><br><span class="line">            <span class="keyword">throw</span> <span class="keyword">new</span> IllegalArgumentException(</span><br><span class="line">                    String.format(<span class="string">"Invalid timestamp: %d. Timestamp should always be non-negative or null."</span>, timestamp));</span><br><span class="line">        <span class="keyword">if</span> (partition != <span class="keyword">null</span> &amp;&amp; partition &lt; <span class="number">0</span>)</span><br><span class="line">            <span class="keyword">throw</span> <span class="keyword">new</span> IllegalArgumentException(</span><br><span class="line">                    String.format(<span class="string">"Invalid partition: %d. Partition number should always be non-negative or null."</span>, partition));</span><br><span class="line">        <span class="keyword">this</span>.topic = topic;</span><br><span class="line">        <span class="keyword">this</span>.partition = partition;</span><br><span class="line">        <span class="keyword">this</span>.key = key;</span><br><span class="line">        <span class="keyword">this</span>.value = value;</span><br><span class="line">        <span class="keyword">this</span>.timestamp = timestamp;</span><br><span class="line">        <span class="keyword">this</span>.headers = <span class="keyword">new</span> RecordHeaders(headers);</span><br><span class="line">    &#125;</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li><p>如果发送消息时注明了key，以及partition的值</p>
+<p>按key进行哈希，相同的key去一个partition，但是如果扩展了partition的数量就不能保证了</p>
+</li>
+<li><p>如果在发送消息时没有填key</p>
+<p>按照round-robin来选partition，这些要发往同一个partition的请求按照配置，攒一波，然后有一个线程单独一次性发过去</p>
+</li>
+</ul>
+<h3 id="生产信息的批量写入"><a href="#生产信息的批量写入" class="headerlink" title="生产信息的批量写入"></a>生产信息的批量写入</h3><p>​        如果每来一条消息就写入kafka，频繁的网络传输会降低kafka的性能，如果将消息以batch的方式写入，把消息收集到一起再同时处理就会高效很多，可以在server.properties中设置</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line"># The number of messages to accept before forcing a flush of data to disk</span><br><span class="line"># 当达到下面的消息数量时，会将数据flush到日志文件中。默认10000</span><br><span class="line">#log.flush.interval.messages&#x3D;10000</span><br><span class="line"></span><br><span class="line"># The maximum amount of time a message can sit in a log before we force a flush</span><br><span class="line"># 每隔1s，刷新数据到磁盘</span><br><span class="line">#log.flush.interval.ms&#x3D;1000</span><br></pre></td></tr></table></figure>
+
+<h3 id="位移"><a href="#位移" class="headerlink" title="位移"></a>位移</h3><p>​        生产者向分区写入消息，每条消息在分区中的位置信息由一个叫位移（Offset）的数据来表征。分区位移总是从 0 开始，假设一个生产者向一个空分区写入了 10 条消息，那么这 10 条消息的位移依次是 0、1、2、…、9。</p>
+<h2 id="服务端"><a href="#服务端" class="headerlink" title="服务端"></a>服务端</h2><h3 id="Broker"><a href="#Broker" class="headerlink" title="Broker"></a>Broker</h3><ul>
+<li>Kafka的服务端由称为Broker的服务进程构成，即一个kafka集群可以由多个和Broker组成，一个server上可以运行多个kafka broker进程，Kafka支持水平扩展，每个broker在集群中都有一个唯一的broker id，不得重复。</li>
+<li>一般会将不同的Broker分散在不同的节点上，这样如果集群中某一台机器宕机，kafka可以自动选举出其他机器上的Broker继续对外提供服务。</li>
+</ul>
+<h3 id="Controller"><a href="#Controller" class="headerlink" title="Controller"></a>Controller</h3><ul>
+<li><p>一个kafka节点中可能包含多个Broker进程，其中有且仅有一个Broker会被选举为控制器，即Kafka Controller，controller负责管理整个集群中所有分区和副本的状态</p>
+</li>
+<li><p>当某个partition的leader副本出现故障时，由controller负责通知所有broker更新其元数据信息，当为某个topic增加分区数量时，同样还是由controller负责分区的重新分配</p>
+</li>
+<li><p>在zookeeper中可查看当前集群中，哪个broker为controller</p>
+<p><img src="https://willipic.oss-cn-hangzhou.aliyuncs.com/Kafka/%E5%9C%A8zookeeper%E4%B8%AD%E6%9F%A5%E7%9C%8BController.png" alt=""></p>
+</li>
+</ul>
+<h2 id="生产者和消费者"><a href="#生产者和消费者" class="headerlink" title="生产者和消费者"></a>生产者和消费者</h2><h3 id="生产者"><a href="#生产者" class="headerlink" title="生产者"></a>生产者</h3><img src="https://mmbiz.qpic.cn/mmbiz_jpg/1flHOHZw6RvJJRJNdnQadCGWhzxE6qFRxeaPE5kvlkzq91ZQhp6Tic2x6m4YO1dKMfTfZgLJsV2fCJ4KicAYICVA/640?wx_fmt=jpeg&amp;tp=webp&amp;wxfrom=5&amp;wx_lazy=1&amp;wx_co=1" style="zoom:75%;" />
+
+<ul>
+<li>生产者可以通过kafka安装包中的kafka-console-producer.sh在teminal下创建，也可以通过相关API进行创建。</li>
+<li>生产者分为Sync Producer 和 Aync Producer<ul>
+<li>Sync Producer同步的生产者，即一定要某条消息成功才会发送下一条(<strong>涉及到kafka的ack机制</strong>)。所以它是低吞吐率、一般不会出现数据丢失。</li>
+<li>Aync Producer异步的生产者，有个队列的概念，是直接发送到队列里面，批量发送。高吞吐率、可能有数据丢失的。</li>
+</ul>
+</li>
+</ul>
+<h3 id="消费者和消费者组"><a href="#消费者和消费者组" class="headerlink" title="消费者和消费者组"></a>消费者和消费者组</h3><h4 id="消费者"><a href="#消费者" class="headerlink" title="消费者"></a>消费者</h4><p>​        consumer负责消费kafka中的数据，消费者可以通过通过kafka安装包中的kafka-console-consumer.sh在teminal下创建，也可以通过相关API进行创建。</p>
+<h3 id="消费位移"><a href="#消费位移" class="headerlink" title="消费位移"></a>消费位移</h3><p>​        消费者需要记录消费进度，即消费到了哪个分区的哪个位置上，这是消费者位移（<strong>Consumer Offset</strong>）。Consumer offset在kafka中以topic的形式存储，注意，这和上面所说的消息在分区上的位移完全不是一个概念。上面的“位移”表征的是分区内的消息位置，它是不变的，即一旦消息被成功写入到一个分区上，它的位移值就是固定的了。而消费者位移则不同，它可能是随时变化的，毕竟它是消费者消费进度的指示器嘛。通过存储最后消费的 Offset，消费者应用在重启或者停止之后，还可以继续从之前的位置读取。保存的机制可以是 <strong>zookeeper,或者 kafka 自己。</strong></p>
+<h3 id="消费者组"><a href="#消费者组" class="headerlink" title="消费者组"></a>消费者组</h3><p><img src="https://kafka.apache.org/25/images/consumer-groups.png" alt=""></p>
+<ul>
+<li>消费者组，指的是多个消费者实例组成一个消费者组来消费<strong>一组topic</strong>，一个partition只能被消费者组中的其中一个消费者去消费，<strong>组员之间不能重复消费</strong></li>
+<li><strong>消费者组的引入能够提高消费端的吞吐量</strong>，多个消费者同时消费，能够提高TPS。</li>
+<li>消费者组之间可以互相协助，如果消费者组中有一个消费者挂掉了，kafka能够自动检测到，然后把这个Failed实例之前负责的分区转移给其他活着的消费者，<strong>这个过程称为rebalance</strong></li>
+</ul>
+<h2 id="Zookeeper"><a href="#Zookeeper" class="headerlink" title="Zookeeper"></a>Zookeeper</h2><p>​        kafka主要使用zookeeper来存储kafka集群的元数据，比如brokers信息，分区的位置和主题的配置等数据都存在zookeeper集群中。</p>
+<h2 id="Reference"><a href="#Reference" class="headerlink" title="Reference"></a>Reference</h2><ul>
+<li><a href="https://mp.weixin.qq.com/s/WY1ALBKbW3m9DPM0KnBYxg" target="_blank" rel="noopener">https://mp.weixin.qq.com/s/WY1ALBKbW3m9DPM0KnBYxg</a></li>
+<li><a href="https://www.cnblogs.com/the-tops/p/6438997.html" target="_blank" rel="noopener">https://www.cnblogs.com/the-tops/p/6438997.html</a></li>
+<li><a href="https://mp.weixin.qq.com/s?__biz=MzA5MTc0NTMwNQ==&amp;mid=2650718761&amp;idx=2&amp;sn=6f81fca9439d99e2107058761a05a5d9&amp;chksm=887ddf5fbf0a5649915f0abe483c70633aed63172964aba35ae9d691a567b6578b7949b4e5df&amp;mpshare=1&amp;scene=24&amp;srcid=11160kSpfNskou0uvCcKeFWu&amp;sharer_sharetime=1573864380580&amp;sharer_shareid=15b295e551ad5c3f8c1d45edb42156d2#rd" target="_blank" rel="noopener">https://mp.weixin.qq.com/s?__biz=MzA5MTc0NTMwNQ==&amp;mid=2650718761&amp;idx=2&amp;sn=6f81fca9439d99e2107058761a05a5d9&amp;chksm=887ddf5fbf0a5649915f0abe483c70633aed63172964aba35ae9d691a567b6578b7949b4e5df&amp;mpshare=1&amp;scene=24&amp;srcid=11160kSpfNskou0uvCcKeFWu&amp;sharer_sharetime=1573864380580&amp;sharer_shareid=15b295e551ad5c3f8c1d45edb42156d2#rd</a></li>
+</ul>
+]]></content>
+      <categories>
+        <category>Kafka</category>
+      </categories>
+      <tags>
+        <tag>big data</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>idea中配置Lombok + Logback + Slf4j打印日志(附所有踩坑记录)</title>
     <url>/2020/04/30/idea%E4%B8%AD%E9%85%8D%E7%BD%AELombok-Logback-Slf4j%E6%89%93%E5%8D%B0%E6%97%A5%E5%BF%97-%E9%99%84%E6%89%80%E6%9C%89%E8%B8%A9%E5%9D%91%E8%AE%B0%E5%BD%95/</url>
     <content><![CDATA[<h1 id="idea中配置Lombok-Logback-Slf4j打印日志-附所有踩坑记录"><a href="#idea中配置Lombok-Logback-Slf4j打印日志-附所有踩坑记录" class="headerlink" title="idea中配置Lombok + Logback + Slf4j打印日志(附所有踩坑记录)"></a>idea中配置Lombok + Logback + Slf4j打印日志(附所有踩坑记录)</h1><p>本文介绍非spring项目中利用Lombok + Logback + Slf4j记录日志，并附上所有的踩坑记录</p>
