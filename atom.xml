@@ -6,7 +6,7 @@
   <link href="/atom.xml" rel="self"/>
   
   <link href="https://thisiswilli.cn/"/>
-  <updated>2020-06-16T13:57:47.562Z</updated>
+  <updated>2020-06-23T11:05:28.541Z</updated>
   <id>https://thisiswilli.cn/</id>
   
   <author>
@@ -15,6 +15,32 @@
   </author>
   
   <generator uri="https://hexo.io/">Hexo</generator>
+  
+  <entry>
+    <title>MapReduce总结</title>
+    <link href="https://thisiswilli.cn/2020/06/23/MapReduce%E6%80%BB%E7%BB%93/"/>
+    <id>https://thisiswilli.cn/2020/06/23/MapReduce%E6%80%BB%E7%BB%93/</id>
+    <published>2020-06-23T11:02:46.000Z</published>
+    <updated>2020-06-23T11:05:28.541Z</updated>
+    
+    <content type="html"><![CDATA[<h1 id="MapReduce的工作机制"><a href="#MapReduce的工作机制" class="headerlink" title="MapReduce的工作机制"></a>MapReduce的工作机制</h1><h2 id="Hadoop1-X与mr1-X"><a href="#Hadoop1-X与mr1-X" class="headerlink" title="Hadoop1.X与mr1.X"></a>Hadoop1.X与mr1.X</h2><ul><li><p>运行架构：体现计算向数据移动</p><p><img src="https://willipic.oss-cn-hangzhou.aliyuncs.com/Hadoop/Hadoop1%E4%B8%8Emr1.png" alt=""></p></li></ul><p>MRv1角色：</p><ul><li><p>JobTracker</p><ul><li><p>核心，主，单点</p></li><li><p>调度所有的作业</p></li><li><p>监控整个集群的资源负载</p></li></ul></li><li><p>TaskTracker</p><ul><li><p>从，自身节点资源管理，按照jobtracker指令在所在节点开启maptask或者reducetask</p></li><li><p>和JobTracker心跳，汇报资源，获取Task</p></li></ul></li><li><p>Client</p><ul><li><p>作业为单位</p></li><li><p>规划作业计算分布</p></li><li><p>提交作业资源到HDFS</p></li><li><p>最终提交作业到JobTracker</p></li></ul></li><li><p>弊端(MRv1)：</p><ul><li>JobTracker：负载过重，单点故障</li><li>资源管理与计算调度强耦合，其他计算框架需要重复实现资源管理(同时起一个storm和hadoop会造成冲突)</li><li>不同框架对资源不能全局管理 </li></ul></li></ul><h2 id="MapReduce-on-yarn的运行机制"><a href="#MapReduce-on-yarn的运行机制" class="headerlink" title="MapReduce on yarn的运行机制"></a>MapReduce on yarn的运行机制</h2><p>mapreduce作业提交过程描述如下所示</p><ul><li>客户端，提交mapreduce作业</li><li>yarn资源管理器，负责协调集群上计算机资源的分配</li><li>yarn节点管理器，负责启动和监视集群中机器上的计算容器</li><li>HDFS，用来与其他实体间共享作业文件</li></ul><h3 id="作业的提交"><a href="#作业的提交" class="headerlink" title="作业的提交"></a>作业的提交</h3><p><img src="https://willipic.oss-cn-hangzhou.aliyuncs.com/Hadoop/mapreduce%20on%20yarn%E4%BD%9C%E4%B8%9A%E6%8F%90%E4%BA%A4%E8%BF%87%E7%A8%8B.png" alt=""></p><p>JobSummiter所实现的作业提交过程如下所示</p><ol><li>向Resource Manager申请一个新应用id，用于MapReduce作业ID</li><li>检查作业的输出说明，如果没有指定输出目录或者制定输出目录已经存在，那么作业就不提交，抛出错误给MapReduce程序</li><li>计算作业的输入分片，如果分片无法计算，比如输入路径不存在，那么作业就不提交，返回错误给mapreduce程序</li><li>将运行作业所需要的资源(作业Jar文件，配置文件和计算所得的输入分片)复制到一个以作业ID为命名的目录下的<strong>共享文件系统</strong>(3)中，作业jar的副本较多，因此载运行作业任务时，集群中有很多副本可供节点管理器访问</li></ol><h3 id="作业的初始化"><a href="#作业的初始化" class="headerlink" title="作业的初始化"></a>作业的初始化</h3><ol><li>ResourceManager收到调用它的消息之后，便将请求传递给yarn scheduler。调度器分配一个Container，然后ResourceManager在NodeManager下启动application master的进程(5a,5b)。</li><li>mapReducer的application master是一个Java应用程序，它的主类为<strong>MRAppMaste</strong>r。它接收共享文件系统、在客户端计算的<strong>输入分片</strong>(7)，然后对每一个分片创建一个map任务对象以及确定多个reduce对象。</li><li>接下来application master判断任务在哪个位置执行，如果任务很小，就在本地JVM执行。</li></ol><h3 id="任务的分配"><a href="#任务的分配" class="headerlink" title="任务的分配"></a>任务的分配</h3><ul><li>如果作业不适合作为uber任务运行，<strong>那么application master就会为该作业中的所有map任务和reduce任务向resource manager请求容器</strong>。首先为Map任务发出请求，该<strong>请求优先级高于reduce任务</strong>。</li><li>reduce任务能够在集群任意位置进行，但是map任务优值数据本地化局限<ul><li>理想情况下，任务是数据本地化的，即任务在哪执行，数据就在哪</li><li>可选情况是，任务是在分片驻留的同一节点上运行的，即和分片在同一机架而非同一节点运行。</li><li>有些任务并不是本地化，也不是机架本地化，它们会从别的机架，而不是运行所在的机架获取自己的数据。</li></ul></li></ul><h3 id="任务的执行"><a href="#任务的执行" class="headerlink" title="任务的执行"></a>任务的执行</h3><ul><li>一旦资源的调度器为任务分配了一个特定节点上的容器，application master就通过与节点管理器通信来启动容器(9a, 9b)</li><li>在运行任务之前，需要将任务需要的资源本地化，包括作业的配置，JAR文件和所有来自分布式缓存的文件(10)，最后运行map任务和reduce任务(11)</li></ul><h2 id="Shuffle和排序"><a href="#Shuffle和排序" class="headerlink" title="Shuffle和排序"></a>Shuffle和排序</h2><h3 id="map端的shuffle"><a href="#map端的shuffle" class="headerlink" title="map端的shuffle"></a>map端的shuffle</h3><p><img src="https://willipic.oss-cn-hangzhou.aliyuncs.com/Hadoop/MapTask%E5%92%8CReduceTask.png" alt=""></p><ul><li>每个map都有一个<strong>环形缓冲区</strong>用于存储任务输出，一旦缓冲区的内容达到阈值(80%)，后台线程就会将内容溢写到磁盘，在溢出写到磁盘的过程中，map输出继续写到缓冲区，如果在此期间缓冲区被填满，map会被阻塞直到写磁盘过程完成。</li><li>在写磁盘之前，<strong>线程首先根据数据最终要传的reducer把数据划分成相应的分区</strong>，在每个分区中，后台线程按键进行内存中排序，<strong>如果有一个combiner函数</strong>，他就在排序后的输出上运行，运行combiner函数使得map输出结果更紧凑，因此减少写到磁盘的数据和传递给reducer的数据。</li><li>每次内存缓冲区达到溢出阈值，就会新建一个溢出文件(spill file)，每个spill file中也是按照key值取hash分区(由上图可见)，因此在map任务写完其最后一个输出记录后，会有几个溢写文件，在任务完成之前，溢出文件被<strong>合并成一个已分区且已排序的输出文件</strong>。</li><li>如果存在3个溢出文件，则combiner文件就会在输出文件写道磁盘之前再次运行</li><li>将map输出写到磁盘之前对其进行压缩是一个很好的方法，能够让磁盘写的速度更快，节约磁盘空间，并且减少传递给reducer的数据量。</li><li>map端的中间结果是写入磁盘的，任务执行完成之后可以删除。</li></ul><h3 id="Combiner端"><a href="#Combiner端" class="headerlink" title="Combiner端"></a>Combiner端</h3><p>Hadoop允许用户针对map任务的输出指定一个combiner，相当于在map任务与reduce任务之间添加了一层中间层，有利于减少map任务与reduce任务之间的数据量，节省带宽</p><p>如果要完成一个统计最高温度的mapreduce任务，现有两个map的输出如下</p><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">(1950, 0)combiner</span><br><span class="line">(1950, 20) ----------------&gt; (1950, 30)  </span><br><span class="line">(1950, 30)</span><br><span class="line"></span><br><span class="line">-----------                               ------------&gt; (1950, [30, 40]) -----&gt; (1950, 40)</span><br><span class="line">(1950, 10)combiner</span><br><span class="line">(1950, 15) ----------------&gt; (1950, 40)</span><br><span class="line">(1950, 40)</span><br></pre></td></tr></table></figure><p>但是如果是求一整年气温的平均值，那么则不能使用combiner。</p><h3 id="reduce端"><a href="#reduce端" class="headerlink" title="reduce端"></a>reduce端</h3><ul><li>map输出文件位于运行map任务的tasktracker的本地磁盘，现在tasktracker需要为分区文件运行reduce任务，并且，reduce任务需要集群上若干个map任务的map输出作为其特殊的文件分区文件。</li><li>每个map任务的完成时间可能不同，所以当每个任务完成时，reduce任务就开始复制其输出，reduce有少量复制线程，因此能够并行获得map输出</li><li>复制完所有map输出后，reducer进入排序阶段，这个阶段将合并map输出，维持其顺序排序，这是循环进行的</li><li>最后阶段，即reduce阶段，直接将数据输入reduce函数，从而省略了一次磁盘往返行程，</li><li>reduce端的结果存入HDFS。保证可靠性。</li></ul>]]></content>
+    
+    <summary type="html">
+    
+      
+      
+        &lt;h1 id=&quot;MapReduce的工作机制&quot;&gt;&lt;a href=&quot;#MapReduce的工作机制&quot; class=&quot;headerlink&quot; title=&quot;MapReduce的工作机制&quot;&gt;&lt;/a&gt;MapReduce的工作机制&lt;/h1&gt;&lt;h2 id=&quot;Hadoop1-X与mr1-X&quot;&gt;
+      
+    
+    </summary>
+    
+    
+      <category term="Hadoop" scheme="https://thisiswilli.cn/categories/Hadoop/"/>
+    
+    
+      <category term="big data" scheme="https://thisiswilli.cn/tags/big-data/"/>
+    
+  </entry>
   
   <entry>
     <title>kafka架构概述</title>
