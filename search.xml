@@ -3,7 +3,10 @@
   <entry>
     <title>MapReduce总结</title>
     <url>/2020/06/23/MapReduce%E6%80%BB%E7%BB%93/</url>
-    <content><![CDATA[<h1 id="MapReduce的工作机制"><a href="#MapReduce的工作机制" class="headerlink" title="MapReduce的工作机制"></a>MapReduce的工作机制</h1><h2 id="Hadoop1-X与mr1-X"><a href="#Hadoop1-X与mr1-X" class="headerlink" title="Hadoop1.X与mr1.X"></a>Hadoop1.X与mr1.X</h2><ul>
+    <content><![CDATA[<h1 id="MapReduce总结"><a href="#MapReduce总结" class="headerlink" title="MapReduce总结"></a>MapReduce总结</h1><p>本文是对mapreduce的总结。</p>
+<a id="more"></a>
+
+<h2 id="Hadoop1-X与mr1-X"><a href="#Hadoop1-X与mr1-X" class="headerlink" title="Hadoop1.X与mr1.X"></a>Hadoop1.X与mr1.X</h2><ul>
 <li><p>运行架构：体现计算向数据移动</p>
 <p><img src="https://willipic.oss-cn-hangzhou.aliyuncs.com/Hadoop/Hadoop1%E4%B8%8Emr1.png" alt=""></p>
 </li>
@@ -101,6 +104,9 @@
 <li>复制完所有map输出后，reducer进入排序阶段，这个阶段将合并map输出，维持其顺序排序，这是循环进行的</li>
 <li>最后阶段，即reduce阶段，直接将数据输入reduce函数，从而省略了一次磁盘往返行程，</li>
 <li>reduce端的结果存入HDFS。保证可靠性。</li>
+</ul>
+<h2 id="Reference"><a href="#Reference" class="headerlink" title="Reference"></a>Reference</h2><ul>
+<li>《Hadoop权威指南》</li>
 </ul>
 ]]></content>
       <categories>
