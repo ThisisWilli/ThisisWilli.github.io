@@ -1,0 +1,731 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 4.2.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon.ico">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon.ico">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"thisiswilli.cn","root":"/","scheme":"Gemini","version":"7.7.1","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":true},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+  </script>
+
+  <meta name="description" content="Flink中的Streaming api本文简要介绍flink中的streaming api">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Flink中的Streamingapi">
+<meta property="og:url" content="https://thisiswilli.cn/2020/07/10/Flink%E4%B8%AD%E7%9A%84Streamingapi/index.html">
+<meta property="og:site_name" content="ThisisWilli">
+<meta property="og:description" content="Flink中的Streaming api本文简要介绍flink中的streaming api">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://willipic.oss-cn-hangzhou.aliyuncs.com/Flink/keyby%E7%AE%97%E5%AD%90.png">
+<meta property="og:image" content="https://willipic.oss-cn-hangzhou.aliyuncs.com/Flink/connect%E7%AE%97%E5%AD%90.png">
+<meta property="og:image" content="https://willipic.oss-cn-hangzhou.aliyuncs.com/Flink/CoMap%E7%AE%97%E5%AD%90.png">
+<meta property="og:image" content="https://willipic.oss-cn-hangzhou.aliyuncs.com/Flink/union%E7%AE%97%E5%AD%90.png">
+<meta property="article:published_time" content="2020-07-10T07:19:19.000Z">
+<meta property="article:modified_time" content="2020-07-10T07:24:59.705Z">
+<meta property="article:author" content="Willi">
+<meta property="article:tag" content="big data">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://willipic.oss-cn-hangzhou.aliyuncs.com/Flink/keyby%E7%AE%97%E5%AD%90.png">
+
+<link rel="canonical" href="https://thisiswilli.cn/2020/07/10/Flink%E4%B8%AD%E7%9A%84Streamingapi/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome: false,
+    isPost: true
+  };
+</script>
+
+  <title>Flink中的Streamingapi | ThisisWilli</title>
+  
+
+
+  <script>
+    var _hmt = _hmt || [];
+    (function() {
+      var hm = document.createElement("script");
+      hm.src = "https://hm.baidu.com/hm.js?0dc46e5d0914c07dc8b23b28c12d8fb3";
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(hm, s);
+    })();
+  </script>
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+<link rel="alternate" href="/atom.xml" title="ThisisWilli" type="application/atom+xml">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <div>
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">ThisisWilli</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+        <p class="site-subtitle">Time is now</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+<nav class="site-nav">
+  
+  <ul id="menu" class="menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-fw fa-home"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-fw fa-user"></i>关于</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-fw fa-tags"></i>标签<span class="badge">4</span></a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-fw fa-th"></i>分类<span class="badge">8</span></a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-fw fa-archive"></i>归档<span class="badge">15</span></a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+
+</nav>
+  <div class="site-search">
+    <div class="popup search-popup">
+    <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocorrect="off" autocapitalize="off"
+           placeholder="搜索..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result"></div>
+
+</div>
+<div class="search-pop-overlay"></div>
+
+  </div>
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content">
+            
+
+  <div class="posts-expand">
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block " lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://thisiswilli.cn/2020/07/10/Flink%E4%B8%AD%E7%9A%84Streamingapi/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/xiaolang.jpeg">
+      <meta itemprop="name" content="Willi">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="ThisisWilli">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          Flink中的Streamingapi
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+              
+
+              <time title="创建时间：2020-07-10 15:19:19 / 修改时间：15:24:59" itemprop="dateCreated datePublished" datetime="2020-07-10T15:19:19+08:00">2020-07-10</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Flink/" itemprop="url" rel="index"><span itemprop="name">Flink</span></a>
+                </span>
+            </span>
+
+          
+            <span class="post-meta-item" title="阅读次数" id="busuanzi_container_page_pv" style="display: none;">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-eye"></i>
+              </span>
+              <span class="post-meta-item-text">阅读次数：</span>
+              <span id="busuanzi_value_page_pv"></span>
+            </span>
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="fa fa-comment-o"></i>
+      </span>
+      <span class="post-meta-item-text">Valine：</span>
+    
+    <a title="valine" href="/2020/07/10/Flink%E4%B8%AD%E7%9A%84Streamingapi/#valine-comments" itemprop="discussionUrl">
+      <span class="post-comments-count valine-comment-count" data-xid="/2020/07/10/Flink%E4%B8%AD%E7%9A%84Streamingapi/" itemprop="commentCount"></span>
+    </a>
+  </span>
+  
+  <br>
+            <span class="post-meta-item" title="本文字数">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-file-word-o"></i>
+              </span>
+                <span class="post-meta-item-text">本文字数：</span>
+              <span>17k</span>
+            </span>
+            <span class="post-meta-item" title="阅读时长">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-clock-o"></i>
+              </span>
+                <span class="post-meta-item-text">阅读时长 &asymp;</span>
+              <span>16 分钟</span>
+            </span>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h1 id="Flink中的Streaming-api"><a href="#Flink中的Streaming-api" class="headerlink" title="Flink中的Streaming api"></a>Flink中的Streaming api</h1><p>本文简要介绍flink中的streaming api</p>
+<a id="more"></a>
+<h2 id="Environment"><a href="#Environment" class="headerlink" title="Environment"></a>Environment</h2><p>一般采用<code>StreamExecutionEnvironment.getExecutionEnvironment()</code>直接获取环境，系统会自动判定是线上环境还是线下环境</p>
+<h2 id="Source"><a href="#Source" class="headerlink" title="Source"></a>Source</h2><h3 id="从集合中读取"><a href="#从集合中读取" class="headerlink" title="从集合中读取"></a>从集合中读取</h3><p>主要为应用<code>fromCollection</code>api</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">FromCollection</span> </span>&#123;</span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">main</span><span class="params">(String[] args)</span> <span class="keyword">throws</span> Exception </span>&#123;</span><br><span class="line">        StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();</span><br><span class="line">        DataStreamSource&lt;SensorReading&gt; source = env.fromCollection(Arrays.asList(<span class="keyword">new</span> SensorReading(<span class="string">"machine1"</span>, <span class="number">10000L</span>, <span class="number">15.0</span>),</span><br><span class="line">                <span class="keyword">new</span> SensorReading(<span class="string">"machine2"</span>, <span class="number">15000L</span>, <span class="number">20.0</span>),</span><br><span class="line">                <span class="keyword">new</span> SensorReading(<span class="string">"machine1"</span>, <span class="number">20000L</span>, <span class="number">25.0</span>)));</span><br><span class="line">        source.print(<span class="string">"stream1:"</span>).setParallelism(<span class="number">1</span>);</span><br><span class="line">        env.execute();</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">SensorReading</span></span>&#123;</span><br><span class="line">    String id;</span><br><span class="line">    Long timeStamp;</span><br><span class="line">    Double temperature;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="title">SensorReading</span><span class="params">(String id, Long timeStamp, Double temperature)</span> </span>&#123;</span><br><span class="line">        <span class="keyword">this</span>.id = id;</span><br><span class="line">        <span class="keyword">this</span>.timeStamp = timeStamp;</span><br><span class="line">        <span class="keyword">this</span>.temperature = temperature;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> String <span class="title">toString</span><span class="params">()</span> </span>&#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="keyword">super</span>.toString();</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>输出如下</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">stream1:&gt; com.willi.streamapi.SensorReading@5b76534e</span><br><span class="line">stream1:&gt; com.willi.streamapi.SensorReading@91d9238</span><br><span class="line">stream1:&gt; com.willi.streamapi.SensorReading@139e919b</span><br></pre></td></tr></table></figure>
+
+<h3 id="从kafka中读取"><a href="#从kafka中读取" class="headerlink" title="从kafka中读取"></a>从kafka中读取</h3><p>Spark Streaming 如何保证kafka数据消费的一致性，一般采用手动操作偏移量的方式</p>
+<h3 id="自定义Source"><a href="#自定义Source" class="headerlink" title="自定义Source"></a>自定义Source</h3><p>需要让自定义类实现SourceFunction的接口，代码如下</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@Slf</span>4j</span><br><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">CustomSource</span> </span>&#123;</span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">main</span><span class="params">(String[] args)</span> <span class="keyword">throws</span> Exception </span>&#123;</span><br><span class="line">        StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();</span><br><span class="line">        DataStreamSource&lt;SensorReading&gt; stream = env.addSource(<span class="keyword">new</span> MySensorSource());</span><br><span class="line">        stream.print(<span class="string">"customSource"</span>).setParallelism(<span class="number">1</span>);</span><br><span class="line">        env.execute(<span class="string">"custom test"</span>);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">MySensorSource</span> <span class="keyword">implements</span> <span class="title">SourceFunction</span>&lt;<span class="title">SensorReading</span>&gt;</span>&#123;</span><br><span class="line">    <span class="comment">// 定义一个flag，表示数据源是否正常运行</span></span><br><span class="line">    <span class="keyword">boolean</span> running = <span class="keyword">true</span>;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">run</span><span class="params">(SourceContext ctx)</span> <span class="keyword">throws</span> Exception </span>&#123;</span><br><span class="line">        <span class="comment">// 初始化一个随机数生成器</span></span><br><span class="line">        Random rand = <span class="keyword">new</span> Random();</span><br><span class="line"></span><br><span class="line">        <span class="comment">// 初始化一组传感器温度数据</span></span><br><span class="line">        ArrayList&lt;Tuple2&lt;String, Double&gt;&gt; curTemp = <span class="keyword">new</span> ArrayList&lt;&gt;(<span class="number">10</span>);</span><br><span class="line">        <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; <span class="number">10</span>; i++) &#123;</span><br><span class="line">            curTemp.add(<span class="keyword">new</span> Tuple2&lt;String, Double&gt;());</span><br><span class="line">            curTemp.get(i).f0 = <span class="string">"sensor"</span> + i;</span><br><span class="line">            curTemp.get(i).f1 = rand.nextGaussian() * <span class="number">20</span>;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="comment">// 产生数据流</span></span><br><span class="line">        <span class="keyword">while</span> (running)&#123;</span><br><span class="line">            curTemp.stream().map(tuple-&gt;&#123;</span><br><span class="line">                <span class="keyword">return</span> tuple.f1 = tuple.f1 + rand.nextGaussian();</span><br><span class="line">            &#125;);</span><br><span class="line"></span><br><span class="line">            <span class="keyword">long</span> curTime = System.currentTimeMillis();</span><br><span class="line"></span><br><span class="line">            curTemp.forEach(t-&gt;&#123;</span><br><span class="line">                ctx.collect(<span class="keyword">new</span> SensorReading(t.f0, curTime, t.f1));</span><br><span class="line">            &#125;);</span><br><span class="line">            Thread.sleep(<span class="number">1000</span>);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">cancel</span><span class="params">()</span> </span>&#123;</span><br><span class="line">        running = <span class="keyword">false</span>;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h2 id="Transform"><a href="#Transform" class="headerlink" title="Transform"></a>Transform</h2><h3 id="map"><a href="#map" class="headerlink" title="map"></a>map</h3><p>跳过</p>
+<h3 id="flatmap"><a href="#flatmap" class="headerlink" title="flatmap"></a>flatmap</h3><p>跳过</p>
+<h3 id="KeyBy"><a href="#KeyBy" class="headerlink" title="KeyBy"></a>KeyBy</h3><p><img src="https://willipic.oss-cn-hangzhou.aliyuncs.com/Flink/keyby%E7%AE%97%E5%AD%90.png" alt=""></p>
+<p>​        是将DataStream–&gt;KeyedStream“逻辑的将一个流拆分成不相交的两个分区，每个分区包含具有相同的key，在内部以hash的形式实现，需要向keyBy算子传递一个参数，让flink知道以什么字段进行分组。<strong>分流依据是字段是否相同</strong></p>
+<p>​        <strong>流处理数据是来一条处理一条，所以最终全部输出在控制台中的数据是全部数据</strong></p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">KeyBy</span> </span>&#123;</span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">main</span><span class="params">(String[] args)</span> <span class="keyword">throws</span> Exception </span>&#123;</span><br><span class="line">        StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();</span><br><span class="line">        DataStreamSource&lt;String&gt; stream = env.readTextFile(<span class="string">"data/SensorData.txt"</span>);</span><br><span class="line"></span><br><span class="line">        env.setParallelism(<span class="number">1</span>);</span><br><span class="line"></span><br><span class="line">        DataStream&lt;Tuple3&lt;String, Long, Double&gt;&gt; result = stream.map(line -&gt; &#123;</span><br><span class="line">            String[] strs = line.split(<span class="string">","</span>);</span><br><span class="line">            <span class="keyword">return</span> <span class="keyword">new</span> Tuple3&lt;String, Long, Double&gt;(strs[<span class="number">0</span>].trim(), Long.parseLong(strs[<span class="number">1</span>].trim()), Double.parseDouble(strs[<span class="number">2</span>].trim()));</span><br><span class="line">        &#125;).returns(Types.TUPLE(Types.STRING, Types.LONG, Types.DOUBLE))</span><br><span class="line">                .keyBy(<span class="number">0</span>).sum(<span class="number">2</span>);</span><br><span class="line">        result.print();</span><br><span class="line">        env.execute();</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>数据为</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">sensor0, 1589547384239, -2.4995073153807827</span><br><span class="line">sensor1, 1589547384200, 9</span><br><span class="line">sensor1, 1589547384239, 29.44648440921347</span><br><span class="line">sensor1, 1589547384239, 10</span><br><span class="line">sensor2, 1589547384239, 27.600794360625702</span><br><span class="line">sensor2, 1589547384239, -15.65936074310411</span><br><span class="line">sensor3, 1589547384239, -28.730033472155654</span><br><span class="line">sensor3, 1589547384250, 10</span><br><span class="line">sensor4, 1589547384255, 30</span><br><span class="line">sensor4, 1589547384260, 40</span><br></pre></td></tr></table></figure>
+
+<p>输出为</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">(sensor0,1589547384239,-2.4995073153807827)</span><br><span class="line">(sensor1,1589547384200,9.0)</span><br><span class="line">(sensor1,1589547384201,38.44648440921347)</span><br><span class="line">(sensor1,1589547384202,48.44648440921347)</span><br><span class="line">(sensor2,1589547384239,27.600794360625702)</span><br><span class="line">(sensor2,1589547384240,11.941433617521593)</span><br><span class="line">(sensor3,1589547384239,-28.730033472155654)</span><br><span class="line">(sensor3,1589547384240,-18.730033472155654)</span><br><span class="line">(sensor4,1589547384255,30.0)</span><br><span class="line">(sensor4,1589547384256,70.0)</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight scala"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">object</span> <span class="title">ScalaKeyBy</span> </span>&#123;</span><br><span class="line">  <span class="function"><span class="keyword">def</span> <span class="title">main</span></span>(args: <span class="type">Array</span>[<span class="type">String</span>]): <span class="type">Unit</span> = &#123;</span><br><span class="line">    <span class="keyword">val</span> env = <span class="type">StreamExecutionEnvironment</span>.getExecutionEnvironment</span><br><span class="line">    <span class="keyword">val</span> stream = env.fromElements(</span><br><span class="line">      (<span class="number">0</span>, <span class="number">0</span>, <span class="number">0</span>), (<span class="number">0</span>, <span class="number">1</span>, <span class="number">1</span>), (<span class="number">0</span>, <span class="number">2</span>, <span class="number">2</span>),</span><br><span class="line">      (<span class="number">1</span>, <span class="number">0</span>, <span class="number">6</span>), (<span class="number">1</span>, <span class="number">1</span>, <span class="number">7</span>), (<span class="number">1</span>, <span class="number">2</span>, <span class="number">8</span>)</span><br><span class="line">    )</span><br><span class="line">    stream.keyBy(<span class="number">0</span>).sum(<span class="number">1</span>).print().setParallelism(<span class="number">1</span>)</span><br><span class="line">    env.execute(<span class="string">"keyby"</span>)</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>输出为</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">(0,0,0)</span><br><span class="line">(0,1,0)</span><br><span class="line">(0,3,0)</span><br><span class="line">(1,0,6)</span><br><span class="line">(1,1,6)</span><br><span class="line">(1,3,6)</span><br></pre></td></tr></table></figure>
+
+<h3 id="Roll-Aggregation滚动聚合算子"><a href="#Roll-Aggregation滚动聚合算子" class="headerlink" title="Roll Aggregation滚动聚合算子"></a>Roll Aggregation滚动聚合算子</h3><p>以下算子可以对KeyedStream的每一个支流做聚合，必须在<strong>keyBy之后做聚合</strong></p>
+<ul>
+<li>sum()</li>
+<li>min()</li>
+<li>max()</li>
+<li>minBy()</li>
+<li>maxBy()</li>
+</ul>
+<h3 id="Reduce"><a href="#Reduce" class="headerlink" title="Reduce"></a>Reduce</h3><p>​        将KeyedStream–&gt;DataStream：注意一定要KeyedStream进行操作，对一个分组数据流的聚合操作，<strong>合并当前元素和上次聚合的结果，产生一个新的值，返回的流中包含每一次聚合的结果，而不是只返回最后一次聚合的最终结果</strong>，</p>
+<p>​        reduce算子中的x1,x2分别表示前一条数据和后一条数据</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">KeyBy</span> </span>&#123;</span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">main</span><span class="params">(String[] args)</span> <span class="keyword">throws</span> Exception </span>&#123;</span><br><span class="line">        StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();</span><br><span class="line">        DataStreamSource&lt;String&gt; stream = env.readTextFile(<span class="string">"data/SensorData.txt"</span>);</span><br><span class="line"></span><br><span class="line">        env.setParallelism(<span class="number">1</span>);</span><br><span class="line"></span><br><span class="line">        DataStream&lt;Tuple3&lt;String, Long, Double&gt;&gt; result = stream.map(line -&gt; &#123;</span><br><span class="line">            String[] strs = line.split(<span class="string">","</span>);</span><br><span class="line">            <span class="keyword">return</span> <span class="keyword">new</span> Tuple3&lt;String, Long, Double&gt;(strs[<span class="number">0</span>].trim(), Long.parseLong(strs[<span class="number">1</span>].trim()), Double.parseDouble(strs[<span class="number">2</span>].trim()));</span><br><span class="line">        &#125;).returns(Types.TUPLE(Types.STRING, Types.LONG, Types.DOUBLE))</span><br><span class="line">                .keyBy(<span class="number">0</span>).reduce((x1, x2)-&gt;&#123;</span><br><span class="line">                    <span class="keyword">return</span> <span class="keyword">new</span> Tuple3&lt;String, Long, Double&gt;(x1.f0, x1.f1 + <span class="number">1</span>, x2.f2 + <span class="number">10</span>);</span><br><span class="line">                &#125;);</span><br><span class="line">        result.print();</span><br><span class="line">        env.execute();</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>输入</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">sensor0, 1589547384239, -2.4995073153807827</span><br><span class="line">sensor1, 1589547384239, 21</span><br><span class="line">sensor1, 1589547384239, 29.44648440921347</span><br><span class="line">sensor1, 1589547384239, 10</span><br><span class="line">sensor2, 1589547384239, 27.600794360625702</span><br><span class="line">sensor3, 1589547384239, -15.65936074310411</span><br><span class="line">sensor4, 1589547384239, -28.730033472155654</span><br></pre></td></tr></table></figure>
+
+<p>输出为</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">(sensor0,1589547384239,-2.4995073153807827)</span><br><span class="line">(sensor1,1589547384239,21.0)</span><br><span class="line">(sensor1,1589547384240,39.44648440921347)</span><br><span class="line">(sensor1,1589547384241,20.0)</span><br><span class="line">(sensor3,1589547384239,-15.65936074310411)</span><br><span class="line">(sensor2,1589547384239,27.600794360625702)</span><br><span class="line">(sensor4,1589547384239,-28.730033472155654)</span><br></pre></td></tr></table></figure>
+
+<h2 id="多流转换算子"><a href="#多流转换算子" class="headerlink" title="多流转换算子"></a>多流转换算子</h2><h3 id="side-output"><a href="#side-output" class="headerlink" title="side output"></a>side output</h3><p>​        <strong>需要注意的时split算子已经被deprecated</strong>，需要使用side output算子进行分流，在使用的时候，<strong>首先要在外部定义一个outputTag类型，不能在使用函数时创建一个新对象传入。</strong>使用side output算子进行数据分流时能够根据字段的具体特征进行筛选</p>
+<p><a href="https://ci.apache.org/projects/flink/flink-docs-release-1.9/dev/stream/side_output.html" target="_blank" rel="noopener">side output官方文档</a></p>
+<p>需求：传感器温度高于20度的分成一个流进行报警，</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">Split</span> </span>&#123;</span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">main</span><span class="params">(String[] args)</span> <span class="keyword">throws</span> Exception </span>&#123;</span><br><span class="line">        StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();</span><br><span class="line">        DataStreamSource&lt;String&gt; stream = env.readTextFile(<span class="string">"data/SensorData.txt"</span>);</span><br><span class="line">        env.setParallelism(<span class="number">1</span>);</span><br><span class="line">        DataStream&lt;SensorReading&gt; aggStream = stream.map(line -&gt; &#123;</span><br><span class="line">            String[] splits = line.split(<span class="string">","</span>);</span><br><span class="line">            <span class="keyword">return</span> <span class="keyword">new</span> SensorReading(splits[<span class="number">0</span>].trim(), Long.parseLong(splits[<span class="number">1</span>].trim()), Double.parseDouble(splits[<span class="number">2</span>].trim()));</span><br><span class="line">        &#125;).returns(SensorReading<span class="class">.<span class="keyword">class</span>)</span>;</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">        <span class="comment">// 先定义一个tag,必须始终是匿名内部类，以便Flink可以派生通用类型参数的&#123;@link TypeInformation&#125;</span></span><br><span class="line">        <span class="keyword">final</span> OutputTag&lt;Object&gt; tag = <span class="keyword">new</span> OutputTag&lt;Object&gt;(<span class="string">"high"</span>)&#123;&#125;;</span><br><span class="line">        SingleOutputStreamOperator&lt;SensorReading&gt; outputStream = aggStream.process(<span class="keyword">new</span> ProcessFunction&lt;SensorReading, SensorReading&gt;() &#123;</span><br><span class="line">            <span class="meta">@Override</span></span><br><span class="line">            <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">processElement</span><span class="params">(SensorReading sensorReading, Context context, Collector&lt;SensorReading&gt; collector)</span> <span class="keyword">throws</span> Exception </span>&#123;</span><br><span class="line">                <span class="keyword">if</span> (sensorReading.getTemperature() &gt; <span class="number">20</span>)&#123;</span><br><span class="line">                    context.output(tag, sensorReading);</span><br><span class="line">                &#125;<span class="keyword">else</span> &#123;</span><br><span class="line">                    collector.collect(sensorReading);</span><br><span class="line">                &#125;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;);</span><br><span class="line"></span><br><span class="line">        outputStream.getSideOutput(tag).print();</span><br><span class="line">        env.execute();</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>输入数据为</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">sensor0, 1589547384239, -2.4995073153807827</span><br><span class="line">sensor1, 1589547384200, 9</span><br><span class="line">sensor1, 1589547384239, 29.44648440921347</span><br><span class="line">sensor1, 1589547384239, 10</span><br><span class="line">sensor2, 1589547384239, 27.600794360625702</span><br><span class="line">sensor2, 1589547384239, -15.65936074310411</span><br><span class="line">sensor3, 1589547384239, -28.730033472155654</span><br><span class="line">sensor3, 1589547384250, 10</span><br><span class="line">sensor4, 1589547384255, 30</span><br><span class="line">sensor4, 1589547384260, 40</span><br></pre></td></tr></table></figure>
+
+<p>输出为</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">sensor2, 1589547384239, 27.600794360625702</span><br><span class="line">sensor1, 1589547384239, 29.44648440921347</span><br><span class="line">sensor4, 1589547384255, 30.0</span><br><span class="line">sensor4, 1589547384260, 40.0</span><br></pre></td></tr></table></figure>
+
+<h3 id="Connect-CoMap-Union算子"><a href="#Connect-CoMap-Union算子" class="headerlink" title="Connect,CoMap,Union算子"></a>Connect,CoMap,Union算子</h3><h4 id="Connect"><a href="#Connect" class="headerlink" title="Connect"></a>Connect</h4><p><img src="https://willipic.oss-cn-hangzhou.aliyuncs.com/Flink/connect%E7%AE%97%E5%AD%90.png" alt=""></p>
+<p>​        DataStream和DataStream —&gt; ConnectedStreams：连接两个保持他们类型的数据流，两个数据流被Connect之后，只是被放在了同一个流中，内部依然保持各自的数据和形式不发生任何变化，两个流互相独立</p>
+<h4 id="CoMap-CoFlatMap"><a href="#CoMap-CoFlatMap" class="headerlink" title="CoMap, CoFlatMap"></a>CoMap, CoFlatMap</h4><p>Connect得到的DataStream中还是两种数据流，通过CoMap，CoFlatMap操作让两种数据流转换成同种数据结构的数据流</p>
+<p><img src="https://willipic.oss-cn-hangzhou.aliyuncs.com/Flink/CoMap%E7%AE%97%E5%AD%90.png" alt=""></p>
+<h3 id="Union算子"><a href="#Union算子" class="headerlink" title="Union算子"></a>Union算子</h3><p>​        DataStream  –&gt;  DataStream：对两个或者两个以上的DataStream进行union操作，产生一个包含所有DataStream元素的新DataStream三种算子的代码实例如下，对两个sideoutput出来的DataStream是会出现bug的，<a href="https://issues.apache.org/jira/browse/FLINK-17578" target="_blank" rel="noopener">具体如下</a></p>
+<p><img src="https://willipic.oss-cn-hangzhou.aliyuncs.com/Flink/union%E7%AE%97%E5%AD%90.png" alt=""></p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">ConnectedAndUnion</span> </span>&#123;</span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">main</span><span class="params">(String[] args)</span> <span class="keyword">throws</span> Exception </span>&#123;</span><br><span class="line">        StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();</span><br><span class="line"></span><br><span class="line">        DataStreamSource&lt;String&gt; source = env.readTextFile(<span class="string">"data/SensorData.txt"</span>);</span><br><span class="line"></span><br><span class="line">        SingleOutputStreamOperator&lt;SensorReading&gt; aggStream = source.map(line -&gt; &#123;</span><br><span class="line">            String[] splits = line.split(<span class="string">", "</span>);</span><br><span class="line">            <span class="keyword">return</span> <span class="keyword">new</span> SensorReading(splits[<span class="number">0</span>], Long.parseLong(splits[<span class="number">1</span>]), Double.parseDouble(splits[<span class="number">2</span>]));</span><br><span class="line">        &#125;).returns(SensorReading<span class="class">.<span class="keyword">class</span>)</span>;</span><br><span class="line"></span><br><span class="line">        OutputTag&lt;Object&gt; mid = <span class="keyword">new</span> OutputTag&lt;Object&gt;(<span class="string">"mid"</span>)&#123;&#125;;</span><br><span class="line">        OutputTag&lt;Object&gt; high = <span class="keyword">new</span> OutputTag&lt;Object&gt;(<span class="string">"high"</span>)&#123;&#125;;</span><br><span class="line">        OutputTag&lt;Object&gt; low = <span class="keyword">new</span> OutputTag&lt;Object&gt;(<span class="string">"low"</span>)&#123;&#125;;</span><br><span class="line">        SingleOutputStreamOperator&lt;SensorReading&gt; sideOutputStream = aggStream.process(<span class="keyword">new</span> ProcessFunction&lt;SensorReading, SensorReading&gt;() &#123;</span><br><span class="line">            <span class="meta">@Override</span></span><br><span class="line">            <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">processElement</span><span class="params">(SensorReading sensorReading, Context context, Collector&lt;SensorReading&gt; collector)</span> <span class="keyword">throws</span> Exception </span>&#123;</span><br><span class="line">                <span class="keyword">if</span> (sensorReading.getTemperature() &gt; <span class="number">5</span> &amp;&amp; sensorReading.getTemperature() &lt; <span class="number">20</span>) &#123;</span><br><span class="line">                    context.output(mid, sensorReading);</span><br><span class="line">                &#125; <span class="keyword">else</span> <span class="keyword">if</span> (sensorReading.getTemperature() &gt; <span class="number">20</span>) &#123;</span><br><span class="line">                    context.output(high, sensorReading);</span><br><span class="line">                &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">                    context.output(low, sensorReading);</span><br><span class="line">                &#125;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;);</span><br><span class="line"></span><br><span class="line">        DataStream&lt;Object&gt; lowStream = sideOutputStream.getSideOutput(low);</span><br><span class="line">        DataStream&lt;Object&gt; midStream = sideOutputStream.getSideOutput(mid);</span><br><span class="line">        DataStream&lt;Object&gt; highStream = sideOutputStream.getSideOutput(high);</span><br><span class="line"></span><br><span class="line">        lowStream.print(<span class="string">"low: "</span>);</span><br><span class="line">        midStream.print(<span class="string">"mid: "</span>);</span><br><span class="line">        highStream.print(<span class="string">"high: "</span>);</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">        DataStream&lt;Object&gt; unionStream = lowStream.union(midStream).union(highStream);</span><br><span class="line">        unionStream.print(<span class="string">"union: "</span>);</span><br><span class="line"></span><br><span class="line">        SingleOutputStreamOperator&lt;Tuple3&lt;String, Long, Double&gt;&gt; changedHigh = highStream.map(data -&gt; &#123;</span><br><span class="line">            data = (SensorReading) data;</span><br><span class="line">            <span class="keyword">return</span> <span class="keyword">new</span> Tuple3&lt;String, Long, Double&gt;(((SensorReading) data).getId(), ((SensorReading) data).getTimeStamp(), ((SensorReading) data).getTemperature());</span><br><span class="line">        &#125;).returns(Types.TUPLE(Types.STRING, Types.LONG, Types.DOUBLE));</span><br><span class="line"></span><br><span class="line">        changedHigh.print(<span class="string">"changedHigh: "</span>);</span><br><span class="line">        <span class="comment">// 这里的map是CoMapFunction</span></span><br><span class="line">        SingleOutputStreamOperator&lt;Object&gt; CoMapStream = lowStream.connect(changedHigh).map(<span class="keyword">new</span> CoMapFunction&lt;Object, Tuple3&lt;String, Long, Double&gt;, Object&gt;() &#123;</span><br><span class="line">            <span class="meta">@Override</span></span><br><span class="line">            <span class="function"><span class="keyword">public</span> SensorReading <span class="title">map1</span><span class="params">(Object o)</span> <span class="keyword">throws</span> Exception </span>&#123;</span><br><span class="line">                <span class="keyword">return</span> (SensorReading) o;</span><br><span class="line">            &#125;</span><br><span class="line"></span><br><span class="line">            <span class="meta">@Override</span></span><br><span class="line">            <span class="function"><span class="keyword">public</span> SensorReading <span class="title">map2</span><span class="params">(Tuple3&lt;String, Long, Double&gt; tuple)</span> <span class="keyword">throws</span> Exception </span>&#123;</span><br><span class="line">                <span class="keyword">return</span> <span class="keyword">new</span> SensorReading(tuple.f0, tuple.f1, tuple.f2);</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;);</span><br><span class="line"></span><br><span class="line">        CoMapStream.print(<span class="string">"CoMap"</span>);</span><br><span class="line">        env.execute();</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>输入数据为</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">sensor0, 1589547384239, -2.4995073153807827</span><br><span class="line">sensor1, 1589547384200, 9</span><br><span class="line">sensor1, 1589547384239, 29.44648440921347</span><br><span class="line">sensor1, 1589547384239, 10</span><br><span class="line">sensor2, 1589547384239, 27.600794360625702</span><br><span class="line">sensor2, 1589547384239, -15.65936074310411</span><br><span class="line">sensor3, 1589547384239, -28.730033472155654</span><br><span class="line">sensor3, 1589547384250, 10</span><br><span class="line">sensor4, 1589547384255, 30</span><br><span class="line">sensor4, 1589547384260, 40</span><br></pre></td></tr></table></figure>
+
+<p>输出数据为</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br></pre></td><td class="code"><pre><span class="line">mid: &gt; sensor1, 1589547384200, 9.0</span><br><span class="line">high: &gt; sensor1, 1589547384239, 29.44648440921347</span><br><span class="line">changedHigh: &gt; (sensor1,1589547384239,29.44648440921347)</span><br><span class="line">mid: &gt; sensor1, 1589547384239, 10.0</span><br><span class="line">high: &gt; sensor2, 1589547384239, 27.600794360625702</span><br><span class="line">changedHigh: &gt; (sensor2,1589547384239,27.600794360625702)</span><br><span class="line">mid: &gt; sensor3, 1589547384250, 10.0</span><br><span class="line">high: &gt; sensor4, 1589547384255, 30.0</span><br><span class="line">changedHigh: &gt; (sensor4,1589547384255,30.0)</span><br><span class="line">high: &gt; sensor4, 1589547384260, 40.0</span><br><span class="line">changedHigh: &gt; (sensor4,1589547384260,40.0)</span><br><span class="line">union: &gt; sensor1, 1589547384200, 9.0</span><br><span class="line">union: &gt; sensor1, 1589547384200, 9.0</span><br><span class="line">union: &gt; sensor1, 1589547384239, 10.0</span><br><span class="line">union: &gt; sensor1, 1589547384239, 10.0</span><br><span class="line">union: &gt; sensor3, 1589547384250, 10.0</span><br><span class="line">union: &gt; sensor3, 1589547384250, 10.0</span><br><span class="line">CoMap&gt; sensor1, 1589547384200, 9.0</span><br><span class="line">CoMap&gt; sensor1, 1589547384239, 29.44648440921347</span><br><span class="line">CoMap&gt; sensor1, 1589547384239, 10.0</span><br><span class="line">CoMap&gt; sensor2, 1589547384239, 27.600794360625702</span><br><span class="line">CoMap&gt; sensor3, 1589547384250, 10.0</span><br><span class="line">CoMap&gt; sensor4, 1589547384255, 30.0</span><br><span class="line">CoMap&gt; sensor4, 1589547384260, 40.0</span><br></pre></td></tr></table></figure>
+
+<h4 id="Connect与Union区别"><a href="#Connect与Union区别" class="headerlink" title="Connect与Union区别"></a>Connect与Union区别</h4><ul>
+<li>union之前两个流的类型必须是一样的，connect可以不一样，在进行CoMapFunction之后调整为一样的</li>
+<li>Connect只能操作两个流，union可以操作多个流</li>
+</ul>
+<h2 id="UDF函数"><a href="#UDF函数" class="headerlink" title="UDF函数"></a>UDF函数</h2><h3 id="函数类"><a href="#函数类" class="headerlink" title="函数类"></a>函数类</h3><p>Flink暴露了所有udf函数的接口(实现方式为接口或者抽象类)，比如MapFunction, FilterFunction, ProcessFunction</p>
+<ul>
+<li>可以自己定义一个外部类，实现Filter接口，在调用filter算子的时候，将类实例化，并传入</li>
+<li>匿名内部类的方式也可以</li>
+<li>Lambda表达式的方式也可以</li>
+</ul>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">FunctionClass</span> </span>&#123;</span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">main</span><span class="params">(String[] args)</span> <span class="keyword">throws</span> Exception </span>&#123;</span><br><span class="line">        StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();</span><br><span class="line">        env.setParallelism(<span class="number">1</span>);</span><br><span class="line">        DataStreamSource&lt;String&gt; source = env.readTextFile(<span class="string">"data/SensorData.txt"</span>);</span><br><span class="line">        SingleOutputStreamOperator&lt;SensorReading&gt; stream = source.map(line -&gt; &#123;</span><br><span class="line">            String[] splits = line.split(<span class="string">","</span>);</span><br><span class="line">            <span class="keyword">return</span> <span class="keyword">new</span> SensorReading(splits[<span class="number">0</span>].trim(), Long.parseLong(splits[<span class="number">1</span>].trim()), Double.parseDouble(splits[<span class="number">2</span>].trim()));</span><br><span class="line">        &#125;).returns(SensorReading<span class="class">.<span class="keyword">class</span>)</span>;</span><br><span class="line"></span><br><span class="line">        stream.filter(<span class="keyword">new</span> MyFilter()).print(<span class="string">"stream1: "</span>);</span><br><span class="line">        stream.filter(<span class="keyword">new</span> FilterFunction&lt;SensorReading&gt;() &#123;</span><br><span class="line">            <span class="meta">@Override</span></span><br><span class="line">            <span class="function"><span class="keyword">public</span> <span class="keyword">boolean</span> <span class="title">filter</span><span class="params">(SensorReading sensorReading)</span> <span class="keyword">throws</span> Exception </span>&#123;</span><br><span class="line">                <span class="keyword">return</span> <span class="string">"sensor2"</span>.equals(sensorReading.getId());</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;).print(<span class="string">"stream2: "</span>);</span><br><span class="line">        stream.filter(data-&gt;&#123;</span><br><span class="line">            <span class="keyword">return</span> <span class="string">"sensor3"</span>.equals(data.getId());</span><br><span class="line">        &#125;).print(<span class="string">"stream3: "</span>);</span><br><span class="line">        env.execute();</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">MyFilter</span> <span class="keyword">implements</span> <span class="title">FilterFunction</span> </span>&#123;</span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">boolean</span> <span class="title">filter</span><span class="params">(Object o)</span> <span class="keyword">throws</span> Exception </span>&#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="string">"sensor1"</span>.equals(((SensorReading) o).getId());</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>输入数据为</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">sensor0, 1589547384239, -2.4995073153807827</span><br><span class="line">sensor1, 1589547384200, 9</span><br><span class="line">sensor1, 1589547384239, 29.44648440921347</span><br><span class="line">sensor1, 1589547384239, 10</span><br><span class="line">sensor2, 1589547384239, 27.600794360625702</span><br><span class="line">sensor2, 1589547384239, -15.65936074310411</span><br><span class="line">sensor3, 1589547384239, -28.730033472155654</span><br><span class="line">sensor3, 1589547384250, 10</span><br><span class="line">sensor4, 1589547384255, 30</span><br><span class="line">sensor4, 1589547384260, 40</span><br></pre></td></tr></table></figure>
+
+<p>输出为</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">stream1: &gt; sensor1, 1589547384200, 9.0</span><br><span class="line">stream1: &gt; sensor1, 1589547384239, 29.44648440921347</span><br><span class="line">stream1: &gt; sensor1, 1589547384239, 10.0</span><br><span class="line">stream2: &gt; sensor2, 1589547384239, 27.600794360625702</span><br><span class="line">stream2: &gt; sensor2, 1589547384239, -15.65936074310411</span><br><span class="line">stream3: &gt; sensor3, 1589547384239, -28.730033472155654</span><br><span class="line">stream3: &gt; sensor3, 1589547384250, 10.0</span><br></pre></td></tr></table></figure>
+
+<h3 id="富函数"><a href="#富函数" class="headerlink" title="富函数"></a>富函数</h3><p>​        ”富函数“是DataStream API提供的一个函数类接口，所有Flink函数类都有其Rich版本，它与常规函数的不同在于，可以获取运行环境的上下文，并拥有一些生命周期方法，能够实现更加复杂的功能。</p>
+<p>Rich Function有一个生命周期的概念，典型的生命周期方法有</p>
+<ul>
+<li>open()方法是rich function的初始化方法，当一个算子例如map或者filter被调用之前open()会被调用</li>
+<li>close()方法是生命周期中的最后一个调用的方法，做一些清理工作</li>
+<li>getRuntimeContext()方法提供了函数的RuntimeContext的一些信息，例如函数执行的并行度，任务的名字，以及state的状态</li>
+</ul>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">RichFunction</span> </span>&#123;</span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">main</span><span class="params">(String[] args)</span> <span class="keyword">throws</span> Exception </span>&#123;</span><br><span class="line">        StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();</span><br><span class="line">        env.setParallelism(<span class="number">1</span>);</span><br><span class="line">        DataStreamSource&lt;String&gt; source = env.readTextFile(<span class="string">"data/SensorData.txt"</span>);</span><br><span class="line">        SingleOutputStreamOperator&lt;String&gt; stream = source.map(line -&gt; &#123;</span><br><span class="line">            String[] splits = line.split(<span class="string">","</span>);</span><br><span class="line">            <span class="keyword">return</span> <span class="keyword">new</span> SensorReading(splits[<span class="number">0</span>].trim(), Long.parseLong(splits[<span class="number">1</span>].trim()), Double.parseDouble(splits[<span class="number">2</span>].trim())).toString();</span><br><span class="line">        &#125;).returns(String<span class="class">.<span class="keyword">class</span>)</span>;</span><br><span class="line"></span><br><span class="line">        source.map(<span class="keyword">new</span> RichMapFunction&lt;String, String&gt;() &#123;</span><br><span class="line">            <span class="meta">@Override</span></span><br><span class="line">            <span class="function"><span class="keyword">public</span> String <span class="title">map</span><span class="params">(String s)</span> <span class="keyword">throws</span> Exception </span>&#123;</span><br><span class="line">                <span class="keyword">return</span> s + <span class="string">"===="</span>;</span><br><span class="line">            &#125;</span><br><span class="line"></span><br><span class="line">            <span class="meta">@Override</span></span><br><span class="line">            <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">open</span><span class="params">(Configuration parameters)</span> <span class="keyword">throws</span> Exception </span>&#123;</span><br><span class="line">                System.out.println(<span class="string">"开始转换......"</span>);</span><br><span class="line">            &#125;</span><br><span class="line"></span><br><span class="line">            <span class="meta">@Override</span></span><br><span class="line">            <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">close</span><span class="params">()</span> <span class="keyword">throws</span> Exception </span>&#123;</span><br><span class="line">                System.out.println(<span class="string">"结束操作......"</span>);</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;).print();</span><br><span class="line"></span><br><span class="line">        env.execute();</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>输出为</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line">开启数据库连接......</span><br><span class="line">sensor0, 1589547384239, -2.4995073153807827&#x3D;&#x3D;&#x3D;&#x3D;</span><br><span class="line">sensor1, 1589547384200, 9&#x3D;&#x3D;&#x3D;&#x3D;</span><br><span class="line">sensor1, 1589547384239, 29.44648440921347&#x3D;&#x3D;&#x3D;&#x3D;</span><br><span class="line">sensor1, 1589547384239, 10&#x3D;&#x3D;&#x3D;&#x3D;</span><br><span class="line">sensor2, 1589547384239, 27.600794360625702&#x3D;&#x3D;&#x3D;&#x3D;</span><br><span class="line">sensor2, 1589547384239, -15.65936074310411&#x3D;&#x3D;&#x3D;&#x3D;</span><br><span class="line">sensor3, 1589547384239, -28.730033472155654&#x3D;&#x3D;&#x3D;&#x3D;</span><br><span class="line">sensor3, 1589547384250, 10&#x3D;&#x3D;&#x3D;&#x3D;</span><br><span class="line">sensor4, 1589547384255, 30&#x3D;&#x3D;&#x3D;&#x3D;</span><br><span class="line">sensor4, 1589547384260, 40&#x3D;&#x3D;&#x3D;&#x3D;</span><br><span class="line">关闭数据库连接.....</span><br><span class="line">关闭数据库连接.....</span><br></pre></td></tr></table></figure>
+
+<h2 id="Sink"><a href="#Sink" class="headerlink" title="Sink"></a>Sink</h2><h3 id="kafka"><a href="#kafka" class="headerlink" title="kafka"></a>kafka</h3><ul>
+<li><p>添加依赖</p>
+<figure class="highlight xml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">dependency</span>&gt;</span></span><br><span class="line">	<span class="tag">&lt;<span class="name">groupId</span>&gt;</span>org.apache.flink<span class="tag">&lt;/<span class="name">groupId</span>&gt;</span></span><br><span class="line">	<span class="tag">&lt;<span class="name">artifactId</span>&gt;</span>flink-connector-kafka-0.11_$&#123;scala.binary.version&#125;<span class="tag">&lt;/<span class="name">artifactId</span>&gt;</span></span><br><span class="line">	<span class="tag">&lt;<span class="name">version</span>&gt;</span>$&#123;flink.version&#125;<span class="tag">&lt;/<span class="name">version</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">dependency</span>&gt;</span></span><br></pre></td></tr></table></figure>
+</li>
+<li><p>编写代码</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">SinkKafka</span> </span>&#123;</span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">main</span><span class="params">(String[] args)</span> <span class="keyword">throws</span> Exception </span>&#123;</span><br><span class="line">        StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();</span><br><span class="line">        env.setParallelism(<span class="number">1</span>);</span><br><span class="line">        DataStreamSource&lt;String&gt; source = env.readTextFile(<span class="string">"data/SensorData.txt"</span>);</span><br><span class="line">        SingleOutputStreamOperator&lt;String&gt; stream = source.map(line -&gt; &#123;</span><br><span class="line">            String[] splits = line.split(<span class="string">","</span>);</span><br><span class="line">            <span class="keyword">return</span> <span class="keyword">new</span> SensorReading(splits[<span class="number">0</span>].trim(), Long.parseLong(splits[<span class="number">1</span>].trim()), Double.parseDouble(splits[<span class="number">2</span>].trim())).toString();</span><br><span class="line">        &#125;).returns(String<span class="class">.<span class="keyword">class</span>)</span>;</span><br><span class="line"></span><br><span class="line">        stream.addSink(<span class="keyword">new</span> FlinkKafkaProducer011&lt;String&gt;(<span class="string">"node01:9092, node02:9092, node03:9092"</span>, <span class="string">"flink"</span>, <span class="keyword">new</span> SimpleStringSchema()));</span><br><span class="line"></span><br><span class="line">        env.execute();</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>启动console消费者，并接收数据，输出如下</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">[root@node01 bin]# ./kafka-console-consumer.sh --bootstrap-server node01:9092, node02:9092, node03:9092 --topic flink</span><br><span class="line">[<span class="number">2020</span>-<span class="number">05</span>-<span class="number">18</span> <span class="number">21</span>:<span class="number">11</span>:<span class="number">50</span>,<span class="number">553</span>] WARN Error <span class="keyword">while</span> fetching metadata with correlation id <span class="number">2</span> : &#123;flink=LEADER_NOT_AVAILABLE&#125; (org.apache.kafka.clients.NetworkClient)</span><br><span class="line">sensor0, <span class="number">1589547384239</span>, -<span class="number">2.4995073153807827</span></span><br><span class="line">sensor1, <span class="number">1589547384239</span>, <span class="number">21.0</span></span><br><span class="line">sensor1, <span class="number">1589547384239</span>, <span class="number">29.44648440921347</span></span><br><span class="line">sensor1, <span class="number">1589547384239</span>, <span class="number">10.0</span></span><br><span class="line">sensor2, <span class="number">1589547384239</span>, <span class="number">27.600794360625702</span></span><br><span class="line">sensor3, <span class="number">1589547384239</span>, -<span class="number">15.65936074310411</span></span><br><span class="line">sensor4, <span class="number">1589547384239</span>, -<span class="number">28.730033472155654</span></span><br></pre></td></tr></table></figure>
+
+
+
+</li>
+</ul>
+
+    </div>
+
+    
+    
+    
+        
+
+<div>
+<ul class="post-copyright">
+  <li class="post-copyright-author">
+    <strong>本文作者： </strong>Willi
+  </li>
+  <li class="post-copyright-link">
+    <strong>本文链接：</strong>
+    <a href="https://thisiswilli.cn/2020/07/10/Flink%E4%B8%AD%E7%9A%84Streamingapi/" title="Flink中的Streamingapi">https://thisiswilli.cn/2020/07/10/Flink中的Streamingapi/</a>
+  </li>
+  <li class="post-copyright-license">
+    <strong>版权声明： </strong>本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/zh-Hans" rel="noopener" target="_blank"><i class="fa fa-fw fa-creative-commons"></i>BY-NC-SA</a> 许可协议。转载请注明出处！
+  </li>
+</ul>
+</div>
+
+      <div>
+      
+        
+      
+      </div>
+
+      <div>
+        
+        <div>
+    
+        <div style="text-align:center;color: #ccc;font-size:14px;">
+            -------------本文结束
+            <i class="fa fa-paw"></i>
+            感谢您的阅读-------------
+        </div>
+    
+</div>
+
+        
+      </div>
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/big-data/" rel="tag"># big data</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2020/06/23/MapReduce%E6%80%BB%E7%BB%93/" rel="prev" title="MapReduce总结">
+      <i class="fa fa-chevron-left"></i> MapReduce总结
+    </a></div>
+      <div class="post-nav-item"></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+  </div>
+
+
+          </div>
+          
+    <div class="comments" id="valine-comments"></div>
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let activeClass = CONFIG.comments.activeClass;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#Flink中的Streaming-api"><span class="nav-number">1.</span> <span class="nav-text">Flink中的Streaming api</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#Environment"><span class="nav-number">1.1.</span> <span class="nav-text">Environment</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Source"><span class="nav-number">1.2.</span> <span class="nav-text">Source</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#从集合中读取"><span class="nav-number">1.2.1.</span> <span class="nav-text">从集合中读取</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#从kafka中读取"><span class="nav-number">1.2.2.</span> <span class="nav-text">从kafka中读取</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#自定义Source"><span class="nav-number">1.2.3.</span> <span class="nav-text">自定义Source</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Transform"><span class="nav-number">1.3.</span> <span class="nav-text">Transform</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#map"><span class="nav-number">1.3.1.</span> <span class="nav-text">map</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#flatmap"><span class="nav-number">1.3.2.</span> <span class="nav-text">flatmap</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#KeyBy"><span class="nav-number">1.3.3.</span> <span class="nav-text">KeyBy</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Roll-Aggregation滚动聚合算子"><span class="nav-number">1.3.4.</span> <span class="nav-text">Roll Aggregation滚动聚合算子</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Reduce"><span class="nav-number">1.3.5.</span> <span class="nav-text">Reduce</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#多流转换算子"><span class="nav-number">1.4.</span> <span class="nav-text">多流转换算子</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#side-output"><span class="nav-number">1.4.1.</span> <span class="nav-text">side output</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Connect-CoMap-Union算子"><span class="nav-number">1.4.2.</span> <span class="nav-text">Connect,CoMap,Union算子</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#Connect"><span class="nav-number">1.4.2.1.</span> <span class="nav-text">Connect</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#CoMap-CoFlatMap"><span class="nav-number">1.4.2.2.</span> <span class="nav-text">CoMap, CoFlatMap</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Union算子"><span class="nav-number">1.4.3.</span> <span class="nav-text">Union算子</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#Connect与Union区别"><span class="nav-number">1.4.3.1.</span> <span class="nav-text">Connect与Union区别</span></a></li></ol></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#UDF函数"><span class="nav-number">1.5.</span> <span class="nav-text">UDF函数</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#函数类"><span class="nav-number">1.5.1.</span> <span class="nav-text">函数类</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#富函数"><span class="nav-number">1.5.2.</span> <span class="nav-text">富函数</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Sink"><span class="nav-number">1.6.</span> <span class="nav-text">Sink</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#kafka"><span class="nav-number">1.6.1.</span> <span class="nav-text">kafka</span></a></li></ol></li></ol></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Willi"
+      src="/images/xiaolang.jpeg">
+  <p class="site-author-name" itemprop="name">Willi</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">15</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">8</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">4</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+        <a href="https://github.com/ThisisWilli" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;ThisisWilli" rel="noopener" target="_blank"><i class="fa fa-fw fa-github"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="mailto:295258774@qq.com" title="E-Mail → mailto:295258774@qq.com" rel="noopener" target="_blank"><i class="fa fa-fw fa-envelope"></i>E-Mail</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://www.instagram.com/wever42/" title="Instagram → https:&#x2F;&#x2F;www.instagram.com&#x2F;wever42&#x2F;" rel="noopener" target="_blank"><i class="fa fa-fw fa-instagram"></i>Instagram</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://blog.csdn.net/Jerseywwwwei" title="CSDN → https:&#x2F;&#x2F;blog.csdn.net&#x2F;Jerseywwwwei" rel="noopener" target="_blank"><i class="fa fa-fw fa-book"></i>CSDN</a>
+      </span>
+  </div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+<div class="copyright">
+  
+  &copy; 2018 – 
+  <span itemprop="copyrightYear">2020</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Willi</span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-area-chart"></i>
+    </span>
+      <span class="post-meta-item-text">站点总字数：</span>
+    <span title="站点总字数">104k</span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-coffee"></i>
+    </span>
+      <span class="post-meta-item-text">站点阅读时长 &asymp;</span>
+    <span title="站点阅读时长">1:35</span>
+</div>
+
+        
+<div class="busuanzi-count">
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+  
+    <span class="post-meta-item-icon">
+      <i class="fa fa-user"></i>
+    </span>
+    <span class="site-uv" title="总访客量">
+      &nbsp;本站访客数&nbsp;<span class="busuanzi-value" id="busuanzi_value_site_uv"></span>人</span>	
+    </span>
+  
+
+  
+    <span class="post-meta-divider">|</span>
+  
+
+  
+    <span class="post-meta-item-icon">
+      <i class="fa fa-eye"></i>
+    </span>
+    <span class="site-pv" title="总访问量">
+      &nbsp;本站总访问量&nbsp;<span class="busuanzi-value" id="busuanzi_value_site_pv"></span>次</span>	
+    </span>
+  
+</div>
+
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  
+  <script color='0,0,255' opacity='0.5' zIndex='-1' count='99' src="/lib/canvas-nest/canvas-nest.min.js"></script>
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/pisces.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+  
+<script src="/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+
+<script>
+NexT.utils.loadComments(document.querySelector('#valine-comments'), () => {
+  NexT.utils.getScript('//unpkg.com/valine/dist/Valine.min.js', () => {
+    var GUEST = ['nick', 'mail', 'link'];
+    var guest = 'nick,mail,link';
+    guest = guest.split(',').filter(item => {
+      return GUEST.includes(item);
+    });
+    new Valine({
+      el         : '#valine-comments',
+      verify     : false,
+      notify     : false,
+      appId      : 'WpktFBGS1tJFUonSWplyupKR-gzGzoHsz',
+      appKey     : '0AnoRoyQ9ljCCexp2J2QmvBn',
+      placeholder: "Just go go",
+      avatar     : 'mm',
+      meta       : guest,
+      pageSize   : '10' || 10,
+      visitor    : false,
+      lang       : '' || 'zh-cn',
+      path       : location.pathname,
+      recordIP   : false,
+      serverURLs : ''
+    });
+  }, window.Valine);
+});
+</script>
+
+  <div class="bg_content">
+  <canvas id="canvas"></canvas>
+</div>
+<script src="/live2dw/lib/L2Dwidget.min.js?094cbace49a39548bed64abff5988b05"></script><script>L2Dwidget.init({"log":false,"pluginJsPath":"lib/","pluginModelPath":"assets/","pluginRootPath":"live2dw/","tagMode":false});</script></body>
+</html>
+<script type="text/javascript" src="/js/src/dynamic_bg.js"></script>
