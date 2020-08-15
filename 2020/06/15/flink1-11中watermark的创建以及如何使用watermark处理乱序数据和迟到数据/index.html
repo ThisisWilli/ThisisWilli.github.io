@@ -1,0 +1,687 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 4.2.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon.ico">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon.ico">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"thisiswilli.cn","root":"/","scheme":"Gemini","version":"7.7.1","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":true},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+  </script>
+
+  <meta name="description" content="flink1.11中watermark的创建以及如何使用watermark处理乱序数据和迟到数据本文简要介绍flink1.11中watermark的创建方式以及如何使用watermark处理乱序数据和迟到数据。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="flink1.11中watermark的创建以及如何使用watermark处理乱序数据和迟到数据">
+<meta property="og:url" content="https://thisiswilli.cn/2020/06/15/flink1-11%E4%B8%ADwatermark%E7%9A%84%E5%88%9B%E5%BB%BA%E4%BB%A5%E5%8F%8A%E5%A6%82%E4%BD%95%E4%BD%BF%E7%94%A8watermark%E5%A4%84%E7%90%86%E4%B9%B1%E5%BA%8F%E6%95%B0%E6%8D%AE%E5%92%8C%E8%BF%9F%E5%88%B0%E6%95%B0%E6%8D%AE/index.html">
+<meta property="og:site_name" content="ThisisWilli">
+<meta property="og:description" content="flink1.11中watermark的创建以及如何使用watermark处理乱序数据和迟到数据本文简要介绍flink1.11中watermark的创建方式以及如何使用watermark处理乱序数据和迟到数据。">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2020-06-15T15:27:23.000Z">
+<meta property="article:modified_time" content="2020-08-15T15:34:03.814Z">
+<meta property="article:author" content="Willi">
+<meta property="article:tag" content="big data">
+<meta name="twitter:card" content="summary">
+
+<link rel="canonical" href="https://thisiswilli.cn/2020/06/15/flink1-11%E4%B8%ADwatermark%E7%9A%84%E5%88%9B%E5%BB%BA%E4%BB%A5%E5%8F%8A%E5%A6%82%E4%BD%95%E4%BD%BF%E7%94%A8watermark%E5%A4%84%E7%90%86%E4%B9%B1%E5%BA%8F%E6%95%B0%E6%8D%AE%E5%92%8C%E8%BF%9F%E5%88%B0%E6%95%B0%E6%8D%AE/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome: false,
+    isPost: true
+  };
+</script>
+
+  <title>flink1.11中watermark的创建以及如何使用watermark处理乱序数据和迟到数据 | ThisisWilli</title>
+  
+
+
+  <script>
+    var _hmt = _hmt || [];
+    (function() {
+      var hm = document.createElement("script");
+      hm.src = "https://hm.baidu.com/hm.js?0dc46e5d0914c07dc8b23b28c12d8fb3";
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(hm, s);
+    })();
+  </script>
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+<link rel="alternate" href="/atom.xml" title="ThisisWilli" type="application/atom+xml">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <div>
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">ThisisWilli</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+        <p class="site-subtitle">Time is now</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+<nav class="site-nav">
+  
+  <ul id="menu" class="menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-fw fa-home"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-fw fa-user"></i>关于</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-fw fa-tags"></i>标签<span class="badge">4</span></a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-fw fa-th"></i>分类<span class="badge">8</span></a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-fw fa-archive"></i>归档<span class="badge">17</span></a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+
+</nav>
+  <div class="site-search">
+    <div class="popup search-popup">
+    <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocorrect="off" autocapitalize="off"
+           placeholder="搜索..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result"></div>
+
+</div>
+<div class="search-pop-overlay"></div>
+
+  </div>
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content">
+            
+
+  <div class="posts-expand">
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block " lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://thisiswilli.cn/2020/06/15/flink1-11%E4%B8%ADwatermark%E7%9A%84%E5%88%9B%E5%BB%BA%E4%BB%A5%E5%8F%8A%E5%A6%82%E4%BD%95%E4%BD%BF%E7%94%A8watermark%E5%A4%84%E7%90%86%E4%B9%B1%E5%BA%8F%E6%95%B0%E6%8D%AE%E5%92%8C%E8%BF%9F%E5%88%B0%E6%95%B0%E6%8D%AE/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/xiaolang.jpeg">
+      <meta itemprop="name" content="Willi">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="ThisisWilli">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          flink1.11中watermark的创建以及如何使用watermark处理乱序数据和迟到数据
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2020-06-15 23:27:23" itemprop="dateCreated datePublished" datetime="2020-06-15T23:27:23+08:00">2020-06-15</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-calendar-check-o"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2020-08-15 23:34:03" itemprop="dateModified" datetime="2020-08-15T23:34:03+08:00">2020-08-15</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Flink/" itemprop="url" rel="index"><span itemprop="name">Flink</span></a>
+                </span>
+            </span>
+
+          
+            <span class="post-meta-item" title="阅读次数" id="busuanzi_container_page_pv" style="display: none;">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-eye"></i>
+              </span>
+              <span class="post-meta-item-text">阅读次数：</span>
+              <span id="busuanzi_value_page_pv"></span>
+            </span>
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="fa fa-comment-o"></i>
+      </span>
+      <span class="post-meta-item-text">Valine：</span>
+    
+    <a title="valine" href="/2020/06/15/flink1-11%E4%B8%ADwatermark%E7%9A%84%E5%88%9B%E5%BB%BA%E4%BB%A5%E5%8F%8A%E5%A6%82%E4%BD%95%E4%BD%BF%E7%94%A8watermark%E5%A4%84%E7%90%86%E4%B9%B1%E5%BA%8F%E6%95%B0%E6%8D%AE%E5%92%8C%E8%BF%9F%E5%88%B0%E6%95%B0%E6%8D%AE/#valine-comments" itemprop="discussionUrl">
+      <span class="post-comments-count valine-comment-count" data-xid="/2020/06/15/flink1-11%E4%B8%ADwatermark%E7%9A%84%E5%88%9B%E5%BB%BA%E4%BB%A5%E5%8F%8A%E5%A6%82%E4%BD%95%E4%BD%BF%E7%94%A8watermark%E5%A4%84%E7%90%86%E4%B9%B1%E5%BA%8F%E6%95%B0%E6%8D%AE%E5%92%8C%E8%BF%9F%E5%88%B0%E6%95%B0%E6%8D%AE/" itemprop="commentCount"></span>
+    </a>
+  </span>
+  
+  <br>
+            <span class="post-meta-item" title="本文字数">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-file-word-o"></i>
+              </span>
+                <span class="post-meta-item-text">本文字数：</span>
+              <span>18k</span>
+            </span>
+            <span class="post-meta-item" title="阅读时长">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-clock-o"></i>
+              </span>
+                <span class="post-meta-item-text">阅读时长 &asymp;</span>
+              <span>16 分钟</span>
+            </span>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h1 id="flink1-11中watermark的创建以及如何使用watermark处理乱序数据和迟到数据"><a href="#flink1-11中watermark的创建以及如何使用watermark处理乱序数据和迟到数据" class="headerlink" title="flink1.11中watermark的创建以及如何使用watermark处理乱序数据和迟到数据"></a>flink1.11中watermark的创建以及如何使用watermark处理乱序数据和迟到数据</h1><p>本文简要介绍flink1.11中watermark的创建方式以及如何使用watermark处理乱序数据和迟到数据。</p>
+<a id="more"></a>
+
+<h2 id="Flink1-11重写WaterStrategy"><a href="#Flink1-11重写WaterStrategy" class="headerlink" title="Flink1.11重写WaterStrategy"></a>Flink1.11重写WaterStrategy</h2><p> [FLIP-126] 优化 Source 的 WatermarkAssigner 接口</p>
+<p>新的 WatermarkAssigner 接口将之前的 AssignerWithPunctuatedWatermarks 和 AssignerWithPeriodicWatermarks 的两类 Watermark 的接口进行了整合，从而简化了后续开发支持插入 Watermark 的 Source 实现复杂度。</p>
+<h2 id="创建Watermark的三种方法"><a href="#创建Watermark的三种方法" class="headerlink" title="创建Watermark的三种方法"></a>创建Watermark的三种方法</h2><p>创建watermark的代码一般如下所示</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">stream.map()</span><br><span class="line">.assignTimestampsAndWatermarks()</span><br><span class="line">....</span><br></pre></td></tr></table></figure>
+
+<p>flink中创建watermark一般有以下3种方式</p>
+<h3 id="使用createWatermarkGenerator-创建watermark"><a href="#使用createWatermarkGenerator-创建watermark" class="headerlink" title="使用createWatermarkGenerator 创建watermark"></a>使用createWatermarkGenerator 创建watermark</h3><p><strong>需要注意的是需要将数据指定时间戳</strong>，不然无法进行watermark操作，具体代码如下所示</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">UseWatermarkGenerator</span> </span>&#123;</span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">main</span><span class="params">(String[] args)</span> <span class="keyword">throws</span> Exception </span>&#123;</span><br><span class="line">        StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();</span><br><span class="line">        env.setParallelism(<span class="number">1</span>);</span><br><span class="line">        env.setStreamTimeCharacteristic(TimeCharacteristic.EventTime);</span><br><span class="line">        <span class="comment">// 每秒更新一次watermark</span></span><br><span class="line">        env.getConfig().setAutoWatermarkInterval(<span class="number">1000L</span>);</span><br><span class="line"></span><br><span class="line">        DataStreamSource&lt;String&gt; source = env.socketTextStream(<span class="string">"192.168.177.211"</span>, <span class="number">7777</span>);</span><br><span class="line">        SingleOutputStreamOperator&lt;SensorReading&gt; stream = source.map(data -&gt; <span class="keyword">new</span> SensorReading(</span><br><span class="line">                        data.split(<span class="string">","</span>)[<span class="number">0</span>].trim(),</span><br><span class="line">                        Long.parseLong(data.split(<span class="string">","</span>)[<span class="number">1</span>].trim()),</span><br><span class="line">                        Double.parseDouble(data.split(<span class="string">","</span>)[<span class="number">2</span>].trim())</span><br><span class="line">                )</span><br><span class="line">        ).returns(SensorReading<span class="class">.<span class="keyword">class</span>)</span>;</span><br><span class="line"></span><br><span class="line">        stream.assignTimestampsAndWatermarks(</span><br><span class="line">                <span class="keyword">new</span> WatermarkStrategy&lt;SensorReading&gt;() &#123;</span><br><span class="line">            <span class="meta">@Override</span></span><br><span class="line">            <span class="function"><span class="keyword">public</span> WatermarkGenerator&lt;SensorReading&gt; <span class="title">createWatermarkGenerator</span><span class="params">(WatermarkGeneratorSupplier.Context context)</span> </span>&#123;</span><br><span class="line">                <span class="keyword">return</span> <span class="keyword">new</span> WatermarkGenerator&lt;SensorReading&gt;() &#123;</span><br><span class="line">                    <span class="keyword">private</span> <span class="keyword">long</span> maxTimesStamp = Long.MIN_VALUE;</span><br><span class="line">                    <span class="comment">// 每来一条数据，将这条数据与maxTimesStamp比较，看是否需要更新watermark</span></span><br><span class="line">                    <span class="meta">@Override</span></span><br><span class="line">                    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">onEvent</span><span class="params">(SensorReading event, <span class="keyword">long</span> eventTimestamp, WatermarkOutput output)</span> </span>&#123;</span><br><span class="line">                        maxTimesStamp = Math.max(event.getTimeStamp(), maxTimesStamp);</span><br><span class="line">                    &#125;</span><br><span class="line"></span><br><span class="line">                    <span class="comment">// 周期性更新watermark</span></span><br><span class="line">                    <span class="meta">@Override</span></span><br><span class="line">                    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">onPeriodicEmit</span><span class="params">(WatermarkOutput output)</span> </span>&#123;</span><br><span class="line">                        <span class="comment">// 允许乱序数据的最大限度为3s</span></span><br><span class="line">                        <span class="keyword">long</span> maxOutOfOrderness = <span class="number">3000L</span>;</span><br><span class="line">                        output.emitWatermark(<span class="keyword">new</span> Watermark(maxTimesStamp - maxOutOfOrderness));</span><br><span class="line">                    &#125;</span><br><span class="line">                &#125;;</span><br><span class="line">            &#125;</span><br><span class="line">            <span class="comment">// 必须指定中的timeStamp，否则报错</span></span><br><span class="line">        &#125;.withTimestampAssigner((element, recordTimestamp) -&gt; element.getTimeStamp()))</span><br><span class="line">                .keyBy(SensorReading::getId)</span><br><span class="line">                <span class="comment">// 创建长度为5s的事件时间窗口</span></span><br><span class="line">                .timeWindow(Time.seconds(<span class="number">5</span>))</span><br><span class="line">                .apply(<span class="keyword">new</span> WindowFunction&lt;SensorReading, Object, String, TimeWindow&gt;() &#123;</span><br><span class="line">                    <span class="meta">@Override</span></span><br><span class="line">                    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">apply</span><span class="params">(String s, TimeWindow window, Iterable&lt;SensorReading&gt; input, Collector&lt;Object&gt; out)</span> <span class="keyword">throws</span> Exception </span>&#123;</span><br><span class="line">                        System.out.println(<span class="string">"window : ["</span> + window.getStart() + <span class="string">", "</span> + window.getEnd() + <span class="string">"]"</span>);</span><br><span class="line">                        ArrayList&lt;SensorReading&gt; list = <span class="keyword">new</span> ArrayList&lt;&gt;((Collection&lt;? extends SensorReading&gt;) input);</span><br><span class="line">                        list.forEach(out::collect);</span><br><span class="line">                    &#125;</span><br><span class="line">                &#125;).print();</span><br><span class="line"></span><br><span class="line">        env.execute();</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>输入以下数据</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">sensor1,1000000000000,2 &#x2F;&#x2F; watermark &#x3D; 999999997000， window : [1000000000000, 1000000005000)</span><br><span class="line">sensor1,1000000005000,9 &#x2F;&#x2F; watermark &#x3D; 1000000002000，window : [1000000000000, 1000000005000)</span><br><span class="line">sensor1,1000000010000,3	&#x2F;&#x2F; watermark &#x3D; 1000000007000， watermark &gt; 1000000005000, 关闭[0, 5) 这个窗口，并开启[1000000005000, 1000000010000)窗口</span><br><span class="line">sensor1,1000000002000,10&#x2F;&#x2F; watermark &#x3D; 1000000007000， 1000000002000 &lt; watermark， 这条数据迟到并被丢弃</span><br><span class="line">sensor1,1000000015000,11&#x2F;&#x2F; watermark &#x3D; 1000000010000， watermark &#x3D; 1000000010000,关闭[0, 10) 这个窗口，并开启[1000000010000, 1000000015000)窗口</span><br><span class="line">sensor1,1000000020000,7 &#x2F;&#x2F; watermark &#x3D; 1000000017000  window[1000000015000, 1000000020000)数据还没全到，不关闭窗口</span><br></pre></td></tr></table></figure>
+
+<p>输出为</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">window : [1000000000000, 1000000005000]</span><br><span class="line">SensorReading&#123;id&#x3D;&#39;sensor1&#39;, timeStamp&#x3D;1000000000000, temperature&#x3D;2.0&#125;</span><br><span class="line"></span><br><span class="line">window : [1000000005000, 1000000010000]</span><br><span class="line">SensorReading&#123;id&#x3D;&#39;sensor1&#39;, timeStamp&#x3D;1000000005000, temperature&#x3D;9.0&#125;</span><br><span class="line"></span><br><span class="line">window : [1000000010000, 1000000015000]</span><br><span class="line">SensorReading&#123;id&#x3D;&#39;sensor1&#39;, timeStamp&#x3D;1000000010000, temperature&#x3D;3.0&#125;</span><br></pre></td></tr></table></figure>
+
+<h3 id="使用固定延时策略生成水印"><a href="#使用固定延时策略生成水印" class="headerlink" title="使用固定延时策略生成水印"></a>使用固定延时策略生成水印</h3><p>使用固定延时策略生成水印需要调用WatermarkStrategy中的静态方法forBoundedOutOfOrderness，从源码中可以看出，使用调用forBoundedOutOfOrderness底层原理和使用createWatermarkGenerator生成watermark是一样的</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">interface</span> <span class="title">WatermarkStrategy</span>&lt;<span class="title">T</span>&gt; <span class="keyword">extends</span></span></span><br><span class="line"><span class="class">		<span class="title">TimestampAssignerSupplier</span>&lt;<span class="title">T</span>&gt;, <span class="title">WatermarkGeneratorSupplier</span>&lt;<span class="title">T</span>&gt; </span>&#123;</span><br><span class="line">	......</span><br><span class="line">	<span class="keyword">static</span> &lt;T&gt; <span class="function">WatermarkStrategy&lt;T&gt; <span class="title">forBoundedOutOfOrderness</span><span class="params">(Duration maxOutOfOrderness)</span> </span>&#123;</span><br><span class="line">		<span class="keyword">return</span> (ctx) -&gt; <span class="keyword">new</span> BoundedOutOfOrdernessWatermarks&lt;&gt;(maxOutOfOrderness);</span><br><span class="line">	&#125;</span><br><span class="line">    ......</span><br><span class="line">&#125;</span><br><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">BoundedOutOfOrdernessWatermarks</span>&lt;<span class="title">T</span>&gt; <span class="keyword">implements</span> <span class="title">WatermarkGenerator</span>&lt;<span class="title">T</span>&gt; </span>&#123;</span><br><span class="line"></span><br><span class="line">	<span class="comment">/** The maximum timestamp encountered so far. */</span></span><br><span class="line">	<span class="keyword">private</span> <span class="keyword">long</span> maxTimestamp;</span><br><span class="line"></span><br><span class="line">	<span class="comment">/** The maximum out-of-orderness that this watermark generator assumes. 乱序数据 */</span></span><br><span class="line">	<span class="keyword">private</span> <span class="keyword">final</span> <span class="keyword">long</span> outOfOrdernessMillis;</span><br><span class="line">	<span class="function"><span class="keyword">public</span> <span class="title">BoundedOutOfOrdernessWatermarks</span><span class="params">(Duration maxOutOfOrderness)</span> </span>&#123;</span><br><span class="line">		checkNotNull(maxOutOfOrderness, <span class="string">"maxOutOfOrderness"</span>);</span><br><span class="line">		checkArgument(!maxOutOfOrderness.isNegative(), <span class="string">"maxOutOfOrderness cannot be negative"</span>);</span><br><span class="line"></span><br><span class="line">		<span class="keyword">this</span>.outOfOrdernessMillis = maxOutOfOrderness.toMillis();</span><br><span class="line"></span><br><span class="line">		<span class="comment">// start so that our lowest watermark would be Long.MIN_VALUE.</span></span><br><span class="line">		<span class="keyword">this</span>.maxTimestamp = Long.MIN_VALUE + outOfOrdernessMillis + <span class="number">1</span>;</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="comment">// ------------------------------------------------------------------------</span></span><br><span class="line">	<span class="comment">// 每来一条数据，处理一次</span></span><br><span class="line">	<span class="meta">@Override</span></span><br><span class="line">	<span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">onEvent</span><span class="params">(T event, <span class="keyword">long</span> eventTimestamp, WatermarkOutput output)</span> </span>&#123;</span><br><span class="line">		maxTimestamp = Math.max(maxTimestamp, eventTimestamp);</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="comment">// 周期性生成watermark</span></span><br><span class="line">	<span class="meta">@Override</span></span><br><span class="line">	<span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">onPeriodicEmit</span><span class="params">(WatermarkOutput output)</span> </span>&#123;</span><br><span class="line">		output.emitWatermark(<span class="keyword">new</span> Watermark(maxTimestamp - outOfOrdernessMillis - <span class="number">1</span>));</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>测试代码如下</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">UseBoundedOutOfOrdernessWatermark</span> </span>&#123;</span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">main</span><span class="params">(String[] args)</span> <span class="keyword">throws</span> Exception </span>&#123;</span><br><span class="line">        StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();</span><br><span class="line">        env.setParallelism(<span class="number">1</span>);</span><br><span class="line">        env.setStreamTimeCharacteristic(TimeCharacteristic.EventTime);</span><br><span class="line">        <span class="comment">// 默认是200ms</span></span><br><span class="line">        env.getConfig().setAutoWatermarkInterval(<span class="number">1L</span>);</span><br><span class="line">        DataStreamSource&lt;String&gt; source = env.socketTextStream(<span class="string">"192.168.177.211"</span>, <span class="number">7777</span>);</span><br><span class="line">        SingleOutputStreamOperator&lt;SensorReading&gt; stream = source.map(data -&gt; <span class="keyword">new</span> SensorReading(</span><br><span class="line">                        data.split(<span class="string">","</span>)[<span class="number">0</span>].trim(),</span><br><span class="line">                        Long.parseLong(data.split(<span class="string">","</span>)[<span class="number">1</span>].trim()),</span><br><span class="line">                        Double.parseDouble(data.split(<span class="string">","</span>)[<span class="number">2</span>].trim())</span><br><span class="line">                )</span><br><span class="line">        ).returns(SensorReading<span class="class">.<span class="keyword">class</span>)</span>;</span><br><span class="line">        <span class="comment">// 间歇性生成 watermark， 设置最长容忍乱序数据时间为6</span></span><br><span class="line">        SingleOutputStreamOperator&lt;SensorReading&gt; result = stream.assignTimestampsAndWatermarks(WatermarkStrategy.&lt;SensorReading&gt;forBoundedOutOfOrderness(Duration.ofSeconds(<span class="number">5</span>))</span><br><span class="line">                .withTimestampAssigner(<span class="keyword">new</span> SerializableTimestampAssigner&lt;SensorReading&gt;() &#123;</span><br><span class="line">                    <span class="meta">@Override</span></span><br><span class="line">                    <span class="function"><span class="keyword">public</span> <span class="keyword">long</span> <span class="title">extractTimestamp</span><span class="params">(SensorReading element, <span class="keyword">long</span> recordTimestamp)</span> </span>&#123;</span><br><span class="line">                        <span class="keyword">return</span> element.getTimeStamp();</span><br><span class="line">                    &#125;</span><br><span class="line">                &#125;)).keyBy(SensorReading::getId)</span><br><span class="line">                .timeWindow(Time.seconds(<span class="number">5</span>))</span><br><span class="line">                .apply(<span class="keyword">new</span> WindowFunction&lt;SensorReading, SensorReading, String, TimeWindow&gt;() &#123;</span><br><span class="line">                    <span class="meta">@Override</span></span><br><span class="line">                    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">apply</span><span class="params">(String s, TimeWindow window, Iterable&lt;SensorReading&gt; input, Collector&lt;SensorReading&gt; out)</span> <span class="keyword">throws</span> Exception </span>&#123;</span><br><span class="line">                        System.out.println(<span class="string">"window : ["</span> + window.getStart() + <span class="string">", "</span> + window.getEnd() + <span class="string">"]"</span>);</span><br><span class="line">                        ArrayList&lt;SensorReading&gt; list = <span class="keyword">new</span> ArrayList&lt;&gt;((Collection&lt;? extends SensorReading&gt;) input);</span><br><span class="line">                        list.forEach(out::collect);</span><br><span class="line">                    &#125;</span><br><span class="line">                &#125;);</span><br><span class="line">        result.print();</span><br><span class="line">        env.execute();</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>输入数据如下</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">sensor1,1000000000000,2</span><br><span class="line">sensor1,1000000005000,9</span><br><span class="line">sensor1,1000000010000,3</span><br><span class="line">sensor1,1000000002000,10</span><br><span class="line">sensor1,1000000015000,11</span><br><span class="line">sensor1,1000000020000,7</span><br></pre></td></tr></table></figure>
+
+<p>输出数据如下，原理与采用createWatermarkGenerator生成watermark相同</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">window : [1000000000000, 1000000005000]</span><br><span class="line">SensorReading&#123;id&#x3D;&#39;sensor1&#39;, timeStamp&#x3D;1000000000000, temperature&#x3D;2.0&#125;</span><br><span class="line">window : [1000000005000, 1000000010000]</span><br><span class="line">SensorReading&#123;id&#x3D;&#39;sensor1&#39;, timeStamp&#x3D;1000000005000, temperature&#x3D;9.0&#125;</span><br><span class="line">window : [1000000010000, 1000000015000]</span><br><span class="line">SensorReading&#123;id&#x3D;&#39;sensor1&#39;, timeStamp&#x3D;1000000010000, temperature&#x3D;3.0&#125;</span><br></pre></td></tr></table></figure>
+
+<h3 id="使用单调递增的方式生成watermark"><a href="#使用单调递增的方式生成watermark" class="headerlink" title="使用单调递增的方式生成watermark"></a>使用单调递增的方式生成watermark</h3><p>通过阅读源码可以发现，通过单调递增的方式生成watermark是不允许有乱序数据的，原因如下</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">static</span> &lt;T&gt; <span class="function">WatermarkStrategy&lt;T&gt; <span class="title">forMonotonousTimestamps</span><span class="params">()</span> </span>&#123;</span><br><span class="line">		<span class="keyword">return</span> (ctx) -&gt; <span class="keyword">new</span> AscendingTimestampsWatermarks&lt;&gt;();</span><br><span class="line">	&#125;</span><br><span class="line">	</span><br><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">AscendingTimestampsWatermarks</span>&lt;<span class="title">T</span>&gt; <span class="keyword">extends</span> <span class="title">BoundedOutOfOrdernessWatermarks</span>&lt;<span class="title">T</span>&gt; </span>&#123;</span><br><span class="line"></span><br><span class="line">	<span class="comment">/**</span></span><br><span class="line"><span class="comment">	 * Creates a new watermark generator with for ascending timestamps.</span></span><br><span class="line"><span class="comment">	 */</span></span><br><span class="line">	<span class="function"><span class="keyword">public</span> <span class="title">AscendingTimestampsWatermarks</span><span class="params">()</span> </span>&#123;</span><br><span class="line">        <span class="comment">// 调用BoundedOutOfOrdernessWatermarks的构造方法, 允许乱序时间为0</span></span><br><span class="line">		<span class="keyword">super</span>(Duration.ofMillis(<span class="number">0</span>));</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>编写测试代码</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">UseforMonotonous</span> </span>&#123;</span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">main</span><span class="params">(String[] args)</span> <span class="keyword">throws</span> Exception </span>&#123;</span><br><span class="line">        StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();</span><br><span class="line">        env.setParallelism(<span class="number">1</span>);</span><br><span class="line">        env.setStreamTimeCharacteristic(TimeCharacteristic.EventTime);</span><br><span class="line">        <span class="comment">// 默认是200ms</span></span><br><span class="line">        env.getConfig().setAutoWatermarkInterval(<span class="number">1L</span>);</span><br><span class="line">        DataStreamSource&lt;String&gt; source = env.socketTextStream(<span class="string">"192.168.177.211"</span>, <span class="number">7777</span>);</span><br><span class="line">        SingleOutputStreamOperator&lt;SensorReading&gt; stream = source.map(data -&gt; <span class="keyword">new</span> SensorReading(</span><br><span class="line">                        data.split(<span class="string">","</span>)[<span class="number">0</span>].trim(),</span><br><span class="line">                        Long.parseLong(data.split(<span class="string">","</span>)[<span class="number">1</span>].trim()),</span><br><span class="line">                        Double.parseDouble(data.split(<span class="string">","</span>)[<span class="number">2</span>].trim())</span><br><span class="line">                )</span><br><span class="line">        ).returns(SensorReading<span class="class">.<span class="keyword">class</span>)</span>;</span><br><span class="line"></span><br><span class="line">        <span class="comment">// 间歇性生成 watermark， 设置最长容忍乱序数据时间为6</span></span><br><span class="line">        SingleOutputStreamOperator&lt;SensorReading&gt; result = stream</span><br><span class="line">                .assignTimestampsAndWatermarks(WatermarkStrategy.&lt;SensorReading&gt;forMonotonousTimestamps()</span><br><span class="line">                        .withTimestampAssigner((element, recordTimestamp) -&gt; element.getTimeStamp()))</span><br><span class="line">                .keyBy(SensorReading::getId)</span><br><span class="line">                .timeWindow(Time.seconds(<span class="number">5</span>))</span><br><span class="line">                .apply(<span class="keyword">new</span> WindowFunction&lt;SensorReading, SensorReading, String, TimeWindow&gt;() &#123;</span><br><span class="line">                    <span class="meta">@Override</span></span><br><span class="line">                    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">apply</span><span class="params">(String s, TimeWindow window, Iterable&lt;SensorReading&gt; input, Collector&lt;SensorReading&gt; out)</span> <span class="keyword">throws</span> Exception </span>&#123;</span><br><span class="line">                        System.out.println(<span class="string">"window : ["</span> + window.getStart() + <span class="string">", "</span> + window.getEnd() + <span class="string">"]"</span>);</span><br><span class="line">                        ArrayList&lt;SensorReading&gt; list = <span class="keyword">new</span> ArrayList&lt;&gt;((Collection&lt;? extends SensorReading&gt;) input);</span><br><span class="line">                        list.forEach(out::collect);</span><br><span class="line">                    &#125;</span><br><span class="line">                &#125;);</span><br><span class="line">        result.print();</span><br><span class="line">        env.execute();</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>输入数据为</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">sensor1,1000000000000,2</span><br><span class="line">sensor1,1000000000000,2</span><br><span class="line">sensor1,1000000005000,9</span><br><span class="line">sensor1,1000000010000,3</span><br><span class="line">sensor1,1000000002000,10</span><br><span class="line">sensor1,1000000015000,11</span><br><span class="line">sensor1,1000000020000,7</span><br></pre></td></tr></table></figure>
+
+<p>输出数据如下，可见相同的输入数据，采用单调递增的方式生成的数据比另外两种方式得到的数据多一条，因为是递增生成watermark，所以如果当前数据大于watermark，那么watermark就更新为当前数据，在最后一条数据进来时，watermark更新为1000000020000，正好到达window[1000000015000, 1000000020000)的windowend，关闭窗口并输出结果。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">window : [1000000000000, 1000000005000]</span><br><span class="line">SensorReading&#123;id&#x3D;&#39;sensor1&#39;, timeStamp&#x3D;1000000000000, temperature&#x3D;2.0&#125;</span><br><span class="line">window : [1000000005000, 1000000010000]</span><br><span class="line">SensorReading&#123;id&#x3D;&#39;sensor1&#39;, timeStamp&#x3D;1000000005000, temperature&#x3D;9.0&#125;</span><br><span class="line">window : [1000000010000, 1000000015000]</span><br><span class="line">SensorReading&#123;id&#x3D;&#39;sensor1&#39;, timeStamp&#x3D;1000000010000, temperature&#x3D;3.0&#125;</span><br><span class="line">window : [1000000015000, 1000000020000]</span><br><span class="line">SensorReading&#123;id&#x3D;&#39;sensor1&#39;, timeStamp&#x3D;1000000015000, temperature&#x3D;11.0&#125;</span><br></pre></td></tr></table></figure>
+
+<h2 id="利用watermark机制解决数据乱序"><a href="#利用watermark机制解决数据乱序" class="headerlink" title="利用watermark机制解决数据乱序"></a>利用watermark机制解决数据乱序</h2><p>解决思路：将窗口中的数据进行排序，具体代码如下</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">SolveOutOfOrder</span> </span>&#123;</span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">main</span><span class="params">(String[] args)</span> <span class="keyword">throws</span> Exception </span>&#123;</span><br><span class="line">        StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();</span><br><span class="line">        env.setParallelism(<span class="number">1</span>);</span><br><span class="line">        env.setStreamTimeCharacteristic(TimeCharacteristic.EventTime);</span><br><span class="line">        <span class="comment">// 默认是200ms</span></span><br><span class="line">        env.getConfig().setAutoWatermarkInterval(<span class="number">1L</span>);</span><br><span class="line"></span><br><span class="line">        DataStreamSource&lt;String&gt; source = env.socketTextStream(<span class="string">"192.168.177.211"</span>, <span class="number">7777</span>);</span><br><span class="line">        SingleOutputStreamOperator&lt;SensorReading&gt; stream = source.map(data -&gt; <span class="keyword">new</span> SensorReading(</span><br><span class="line">                        data.split(<span class="string">","</span>)[<span class="number">0</span>].trim(),</span><br><span class="line">                        Long.parseLong(data.split(<span class="string">","</span>)[<span class="number">1</span>].trim()),</span><br><span class="line">                        Double.parseDouble(data.split(<span class="string">","</span>)[<span class="number">2</span>].trim())</span><br><span class="line">                )</span><br><span class="line">        ).returns(SensorReading<span class="class">.<span class="keyword">class</span>)</span>;</span><br><span class="line"></span><br><span class="line">        SingleOutputStreamOperator&lt;SensorReading&gt; result = stream.assignTimestampsAndWatermarks(WatermarkStrategy.&lt;SensorReading&gt;forBoundedOutOfOrderness(Duration.ofSeconds(<span class="number">10</span>))</span><br><span class="line">                .withTimestampAssigner(<span class="keyword">new</span> SerializableTimestampAssigner&lt;SensorReading&gt;() &#123;</span><br><span class="line">                    <span class="meta">@Override</span></span><br><span class="line">                    <span class="function"><span class="keyword">public</span> <span class="keyword">long</span> <span class="title">extractTimestamp</span><span class="params">(SensorReading element, <span class="keyword">long</span> recordTimestamp)</span> </span>&#123;</span><br><span class="line">                        <span class="keyword">return</span> element.getTimeStamp();</span><br><span class="line">                    &#125;</span><br><span class="line">                &#125;)).keyBy(SensorReading::getId)</span><br><span class="line">                .timeWindow(Time.seconds(<span class="number">10</span>))</span><br><span class="line">                .process(<span class="keyword">new</span> ProcessWindowFunction&lt;SensorReading, SensorReading, String, TimeWindow&gt;() &#123;</span><br><span class="line">                    <span class="meta">@Override</span></span><br><span class="line">                    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">process</span><span class="params">(String s, Context context, Iterable&lt;SensorReading&gt; elements, Collector&lt;SensorReading&gt; out)</span> <span class="keyword">throws</span> Exception </span>&#123;</span><br><span class="line">                        System.out.println(<span class="string">"window : ["</span> + context.window().getStart() + <span class="string">", "</span> + context.window().getEnd() + <span class="string">")"</span>);</span><br><span class="line">                        ArrayList&lt;SensorReading&gt; list = <span class="keyword">new</span> ArrayList&lt;SensorReading&gt;((Collection&lt;? extends SensorReading&gt;) elements);</span><br><span class="line">                        list.sort((o1, o2) -&gt; (<span class="keyword">int</span>) (o1.getTimeStamp() - o2.getTimeStamp()));</span><br><span class="line">                        list.forEach(out::collect);</span><br><span class="line">                    &#125;</span><br><span class="line">                &#125;);</span><br><span class="line">        result.print();</span><br><span class="line">        env.execute();</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>输入数据如下，其中timestamp是无序的。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">sensor1,1000000010000,3  watermark &#x3D; 1000000000000</span><br><span class="line">sensor1,1000000004000,9  watermark &#x3D; 1000000000000</span><br><span class="line">sensor1,1000000005000,8  watermark &#x3D; 1000000000000</span><br><span class="line">sensor1,1000000003000,7  watermark &#x3D; 1000000000000</span><br><span class="line">sensor1,1000000020000,8  watermark &#x3D; 1000000010000  关闭[1000000000000, 1000000010000)这个窗口，并对数据进行排序</span><br></pre></td></tr></table></figure>
+
+<p>输出如下，将最终数据按照timeStamp进行排序</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">window : [1000000000000, 1000000010000)</span><br><span class="line">SensorReading&#123;id&#x3D;&#39;sensor1&#39;, timeStamp&#x3D;1000000003000, temperature&#x3D;7.0&#125;</span><br><span class="line">SensorReading&#123;id&#x3D;&#39;sensor1&#39;, timeStamp&#x3D;1000000004000, temperature&#x3D;9.0&#125;</span><br><span class="line">SensorReading&#123;id&#x3D;&#39;sensor1&#39;, timeStamp&#x3D;1000000005000, temperature&#x3D;8.0&#125;</span><br></pre></td></tr></table></figure>
+
+<h2 id="利用侧输出流以及allowedLateness解决迟到数据"><a href="#利用侧输出流以及allowedLateness解决迟到数据" class="headerlink" title="利用侧输出流以及allowedLateness解决迟到数据"></a>利用侧输出流以及allowedLateness解决迟到数据</h2><p>在生产环境中，使用watermark能够解决数据的乱序问题，但是不能解决数据迟到的情况，如果想要处理迟到的数据，那么需要使用allowedLateness()方法</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/** currentWatermark - lateness  &lt; currentTime 那么这条数据会被重新计算， 到达水印后超过指定时间的元素将被删除</span></span><br><span class="line"><span class="comment">	 * Sets the time by which elements are allowed to be late. Elements that</span></span><br><span class="line"><span class="comment">	 * arrive behind the watermark by more than the specified time will be dropped.</span></span><br><span class="line"><span class="comment">	 * By default, the allowed lateness is &#123;<span class="doctag">@code</span> 0L&#125;.</span></span><br><span class="line"><span class="comment">	 *	某条数据属于某个窗口，但是watermark超过了窗口的结束时间+延迟时间，则该条数据会被丢弃； 未设置allowedLateness情况下，某条数据属于某个窗口，但是watermark超过了窗口的结束时间，则该条数据会被丢弃；</span></span><br><span class="line"><span class="comment">	 * &lt;p&gt;Setting an allowed lateness is only valid for event-time windows.</span></span><br><span class="line"><span class="comment">	 */</span></span><br><span class="line">	<span class="meta">@PublicEvolving</span></span><br><span class="line">	<span class="function"><span class="keyword">public</span> WindowedStream&lt;T, K, W&gt; <span class="title">allowedLateness</span><span class="params">(Time lateness)</span> </span>&#123;</span><br><span class="line">		<span class="keyword">final</span> <span class="keyword">long</span> millis = lateness.toMilliseconds();</span><br><span class="line">		checkArgument(millis &gt;= <span class="number">0</span>, <span class="string">"The allowed lateness cannot be negative."</span>);</span><br><span class="line"></span><br><span class="line">		<span class="keyword">this</span>.allowedLateness = millis;</span><br><span class="line">		<span class="keyword">return</span> <span class="keyword">this</span>;</span><br><span class="line">	&#125;</span><br></pre></td></tr></table></figure>
+
+<p>但是我们不可能等待所有的迟到数据，可我们也不想把这些数据丢弃，那么就需要用到侧输出流</p>
+<p>测试代码如下，将最大迟到时间设置为1s</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">SolveLateness</span> </span>&#123;</span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">main</span><span class="params">(String[] args)</span> <span class="keyword">throws</span> Exception </span>&#123;</span><br><span class="line">        StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();</span><br><span class="line">        env.setParallelism(<span class="number">1</span>);</span><br><span class="line">        env.setStreamTimeCharacteristic(TimeCharacteristic.EventTime);</span><br><span class="line">        <span class="comment">// 默认是200ms</span></span><br><span class="line">        env.getConfig().setAutoWatermarkInterval(<span class="number">1L</span>);</span><br><span class="line"></span><br><span class="line">        DataStreamSource&lt;String&gt; source = env.socketTextStream(<span class="string">"192.168.177.211"</span>, <span class="number">7777</span>);</span><br><span class="line">        SingleOutputStreamOperator&lt;SensorReading&gt; stream = source.map(data -&gt; <span class="keyword">new</span> SensorReading(</span><br><span class="line">                        data.split(<span class="string">","</span>)[<span class="number">0</span>].trim(),</span><br><span class="line">                        Long.parseLong(data.split(<span class="string">","</span>)[<span class="number">1</span>].trim()),</span><br><span class="line">                        Double.parseDouble(data.split(<span class="string">","</span>)[<span class="number">2</span>].trim())</span><br><span class="line">                )</span><br><span class="line">        ).returns(SensorReading<span class="class">.<span class="keyword">class</span>)</span>;</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">        OutputTag&lt;SensorReading&gt; laterTag = <span class="keyword">new</span> OutputTag&lt;SensorReading&gt;(<span class="string">"laterData"</span>)&#123;&#125;;</span><br><span class="line">        <span class="comment">// 间歇性生成 watermark， 设置最长容忍乱序数据时间为5</span></span><br><span class="line">        SingleOutputStreamOperator&lt;SensorReading&gt; result = stream.assignTimestampsAndWatermarks(WatermarkStrategy.&lt;SensorReading&gt;forBoundedOutOfOrderness(Duration.ofSeconds(<span class="number">5</span>))</span><br><span class="line">                .withTimestampAssigner(<span class="keyword">new</span> SerializableTimestampAssigner&lt;SensorReading&gt;() &#123;</span><br><span class="line">                    <span class="meta">@Override</span></span><br><span class="line">                    <span class="function"><span class="keyword">public</span> <span class="keyword">long</span> <span class="title">extractTimestamp</span><span class="params">(SensorReading element, <span class="keyword">long</span> recordTimestamp)</span> </span>&#123;</span><br><span class="line">                        <span class="keyword">return</span> element.getTimeStamp();</span><br><span class="line">                    &#125;</span><br><span class="line">                &#125;)).keyBy(SensorReading::getId)</span><br><span class="line">                .timeWindow(Time.seconds(<span class="number">5</span>))</span><br><span class="line">                <span class="comment">// 允许数据的最大时间</span></span><br><span class="line">                .allowedLateness(Time.seconds(<span class="number">1</span>))</span><br><span class="line">                <span class="comment">// 采用侧输出流对迟到数据进行处理</span></span><br><span class="line">                .sideOutputLateData(laterTag)</span><br><span class="line">                .apply(<span class="keyword">new</span> WindowFunction&lt;SensorReading, SensorReading, String, TimeWindow&gt;() &#123;</span><br><span class="line">                    <span class="meta">@Override</span></span><br><span class="line">                    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">apply</span><span class="params">(String s, TimeWindow window, Iterable&lt;SensorReading&gt; input, Collector&lt;SensorReading&gt; out)</span> <span class="keyword">throws</span> Exception </span>&#123;</span><br><span class="line">                        System.out.println(<span class="string">"window : ["</span> + window.getStart() + <span class="string">", "</span> + window.getEnd() + <span class="string">"]"</span>);</span><br><span class="line">                        ArrayList&lt;SensorReading&gt; list = <span class="keyword">new</span> ArrayList&lt;&gt;((Collection&lt;? extends SensorReading&gt;) input);</span><br><span class="line">                        list.forEach(out::collect);</span><br><span class="line">                    &#125;</span><br><span class="line">                &#125;);</span><br><span class="line">        result.print();</span><br><span class="line">        result.getSideOutput(laterTag).print(<span class="string">"later data"</span>);</span><br><span class="line">        env.execute();</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>输入数据如下</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">sensor1,1000000000000,2       watermark &#x3D; 999999995000    处在window : [1000000000000, 1000000005000)</span><br><span class="line">sensor1,1000000005000,9		 watermark &#x3D; 1000000000000   处在window : [1000000005000, 1000000010000)</span><br><span class="line">sensor1,1000000010000,3		 watermark &#x3D; 1000000005000   关闭window : [1000000000000, 1000000005000)，window: [1000000005000, 1000000010000)进行中</span><br><span class="line">sensor1,1000000002000,10      watermark &#x3D; 1000000005000   1000000002000属于[1000000000000, 1000000005000)这个窗口 1000000005000 + 1000 &gt; watermark，重新触发窗口[0, 5]计算</span><br><span class="line">sensor1,1000000004000,9		 watermark &#x3D; 1000000005000   1000000004000属于[1000000000000, 1000000005000)这个窗口 1000000005000 + 1000 &gt; watermark，重新触发窗口[0, 5]计算</span><br><span class="line">sensor1,1000000005000,8		 watermark &#x3D; 1000000005000   数据属于处在window : [1000000005000, 1000000010000)窗口</span><br><span class="line">sensor1,1000000015000,11      watermark &#x3D; 1000000010000   关闭window[1000000005000, 1000000010000)</span><br><span class="line">sensor1,1000000004000,11   	  watermark &#x3D; 1000000010000   1000000004000属于[1000000000000, 1000000005000)这个窗口 1000000005000 + 1000 &lt; watermark, 侧输出流输出</span><br></pre></td></tr></table></figure>
+
+<p>输出数据如下</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line">window : [1000000000000, 1000000005000]</span><br><span class="line">SensorReading&#123;id&#x3D;&#39;sensor1&#39;, timeStamp&#x3D;1000000000000, temperature&#x3D;2.0&#125;</span><br><span class="line">window : [1000000000000, 1000000005000]</span><br><span class="line">SensorReading&#123;id&#x3D;&#39;sensor1&#39;, timeStamp&#x3D;1000000000000, temperature&#x3D;2.0&#125;</span><br><span class="line">SensorReading&#123;id&#x3D;&#39;sensor1&#39;, timeStamp&#x3D;1000000002000, temperature&#x3D;10.0&#125;</span><br><span class="line">window : [1000000000000, 1000000005000]</span><br><span class="line">SensorReading&#123;id&#x3D;&#39;sensor1&#39;, timeStamp&#x3D;1000000000000, temperature&#x3D;2.0&#125;</span><br><span class="line">SensorReading&#123;id&#x3D;&#39;sensor1&#39;, timeStamp&#x3D;1000000002000, temperature&#x3D;10.0&#125;</span><br><span class="line">SensorReading&#123;id&#x3D;&#39;sensor1&#39;, timeStamp&#x3D;1000000004000, temperature&#x3D;9.0&#125;</span><br><span class="line">window : [1000000005000, 1000000010000]</span><br><span class="line">SensorReading&#123;id&#x3D;&#39;sensor1&#39;, timeStamp&#x3D;1000000005000, temperature&#x3D;9.0&#125;</span><br><span class="line">SensorReading&#123;id&#x3D;&#39;sensor1&#39;, timeStamp&#x3D;1000000005000, temperature&#x3D;8.0&#125;</span><br><span class="line">later data&gt; SensorReading&#123;id&#x3D;&#39;sensor1&#39;, timeStamp&#x3D;1000000004000, temperature&#x3D;11.0&#125;</span><br></pre></td></tr></table></figure>
+
+<p>总结：</p>
+<p>如果对一个窗口的数据流执行<code>allowedLateness())</code>方法后，如果由迟到数据</p>
+<ul>
+<li><code>当前watermark &gt; 这个数据所属的窗口的endTime +lateness</code> 那么这条数据被丢弃，不去计算</li>
+<li><code>当前watermark &lt; 这个数据所属的窗口的endTime +lateness</code> 那么重新触发这条数据所属的窗口计算</li>
+</ul>
+
+    </div>
+
+    
+    
+    
+        
+
+<div>
+<ul class="post-copyright">
+  <li class="post-copyright-author">
+    <strong>本文作者： </strong>Willi
+  </li>
+  <li class="post-copyright-link">
+    <strong>本文链接：</strong>
+    <a href="https://thisiswilli.cn/2020/06/15/flink1-11%E4%B8%ADwatermark%E7%9A%84%E5%88%9B%E5%BB%BA%E4%BB%A5%E5%8F%8A%E5%A6%82%E4%BD%95%E4%BD%BF%E7%94%A8watermark%E5%A4%84%E7%90%86%E4%B9%B1%E5%BA%8F%E6%95%B0%E6%8D%AE%E5%92%8C%E8%BF%9F%E5%88%B0%E6%95%B0%E6%8D%AE/" title="flink1.11中watermark的创建以及如何使用watermark处理乱序数据和迟到数据">https://thisiswilli.cn/2020/06/15/flink1-11中watermark的创建以及如何使用watermark处理乱序数据和迟到数据/</a>
+  </li>
+  <li class="post-copyright-license">
+    <strong>版权声明： </strong>本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/zh-Hans" rel="noopener" target="_blank"><i class="fa fa-fw fa-creative-commons"></i>BY-NC-SA</a> 许可协议。转载请注明出处！
+  </li>
+</ul>
+</div>
+
+      <div>
+      
+        
+      
+      </div>
+
+      <div>
+        
+        <div>
+    
+        <div style="text-align:center;color: #ccc;font-size:14px;">
+            -------------本文结束
+            <i class="fa fa-paw"></i>
+            感谢您的阅读-------------
+        </div>
+    
+</div>
+
+        
+      </div>
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/big-data/" rel="tag"># big data</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2020/05/14/flink%E4%B8%AD%E7%9A%84%E7%8A%B6%E6%80%81%E7%BC%96%E7%A8%8B%E5%92%8C%E5%AE%B9%E9%94%99%E6%9C%BA%E5%88%B6/" rel="prev" title="flink中的状态编程和容错机制">
+      <i class="fa fa-chevron-left"></i> flink中的状态编程和容错机制
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2020/06/16/kafka%E6%9E%B6%E6%9E%84%E6%A6%82%E8%BF%B0/" rel="next" title="kafka架构概述">
+      kafka架构概述 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+  </div>
+
+
+          </div>
+          
+    <div class="comments" id="valine-comments"></div>
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let activeClass = CONFIG.comments.activeClass;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#flink1-11中watermark的创建以及如何使用watermark处理乱序数据和迟到数据"><span class="nav-number">1.</span> <span class="nav-text">flink1.11中watermark的创建以及如何使用watermark处理乱序数据和迟到数据</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#Flink1-11重写WaterStrategy"><span class="nav-number">1.1.</span> <span class="nav-text">Flink1.11重写WaterStrategy</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#创建Watermark的三种方法"><span class="nav-number">1.2.</span> <span class="nav-text">创建Watermark的三种方法</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#使用createWatermarkGenerator-创建watermark"><span class="nav-number">1.2.1.</span> <span class="nav-text">使用createWatermarkGenerator 创建watermark</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#使用固定延时策略生成水印"><span class="nav-number">1.2.2.</span> <span class="nav-text">使用固定延时策略生成水印</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#使用单调递增的方式生成watermark"><span class="nav-number">1.2.3.</span> <span class="nav-text">使用单调递增的方式生成watermark</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#利用watermark机制解决数据乱序"><span class="nav-number">1.3.</span> <span class="nav-text">利用watermark机制解决数据乱序</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#利用侧输出流以及allowedLateness解决迟到数据"><span class="nav-number">1.4.</span> <span class="nav-text">利用侧输出流以及allowedLateness解决迟到数据</span></a></li></ol></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Willi"
+      src="/images/xiaolang.jpeg">
+  <p class="site-author-name" itemprop="name">Willi</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">17</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">8</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">4</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+        <a href="https://github.com/ThisisWilli" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;ThisisWilli" rel="noopener" target="_blank"><i class="fa fa-fw fa-github"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="mailto:295258774@qq.com" title="E-Mail → mailto:295258774@qq.com" rel="noopener" target="_blank"><i class="fa fa-fw fa-envelope"></i>E-Mail</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://www.instagram.com/wever42/" title="Instagram → https:&#x2F;&#x2F;www.instagram.com&#x2F;wever42&#x2F;" rel="noopener" target="_blank"><i class="fa fa-fw fa-instagram"></i>Instagram</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://blog.csdn.net/Jerseywwwwei" title="CSDN → https:&#x2F;&#x2F;blog.csdn.net&#x2F;Jerseywwwwei" rel="noopener" target="_blank"><i class="fa fa-fw fa-book"></i>CSDN</a>
+      </span>
+  </div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+<div class="copyright">
+  
+  &copy; 2018 – 
+  <span itemprop="copyrightYear">2020</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Willi</span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-area-chart"></i>
+    </span>
+      <span class="post-meta-item-text">站点总字数：</span>
+    <span title="站点总字数">127k</span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-coffee"></i>
+    </span>
+      <span class="post-meta-item-text">站点阅读时长 &asymp;</span>
+    <span title="站点阅读时长">1:55</span>
+</div>
+
+        
+<div class="busuanzi-count">
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+  
+    <span class="post-meta-item-icon">
+      <i class="fa fa-user"></i>
+    </span>
+    <span class="site-uv" title="总访客量">
+      &nbsp;本站访客数&nbsp;<span class="busuanzi-value" id="busuanzi_value_site_uv"></span>人</span>	
+    </span>
+  
+
+  
+    <span class="post-meta-divider">|</span>
+  
+
+  
+    <span class="post-meta-item-icon">
+      <i class="fa fa-eye"></i>
+    </span>
+    <span class="site-pv" title="总访问量">
+      &nbsp;本站总访问量&nbsp;<span class="busuanzi-value" id="busuanzi_value_site_pv"></span>次</span>	
+    </span>
+  
+</div>
+
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  
+  <script color='0,0,255' opacity='0.5' zIndex='-1' count='99' src="/lib/canvas-nest/canvas-nest.min.js"></script>
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/pisces.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+  
+<script src="/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+
+<script>
+NexT.utils.loadComments(document.querySelector('#valine-comments'), () => {
+  NexT.utils.getScript('//unpkg.com/valine/dist/Valine.min.js', () => {
+    var GUEST = ['nick', 'mail', 'link'];
+    var guest = 'nick,mail,link';
+    guest = guest.split(',').filter(item => {
+      return GUEST.includes(item);
+    });
+    new Valine({
+      el         : '#valine-comments',
+      verify     : false,
+      notify     : false,
+      appId      : 'WpktFBGS1tJFUonSWplyupKR-gzGzoHsz',
+      appKey     : '0AnoRoyQ9ljCCexp2J2QmvBn',
+      placeholder: "Just go go",
+      avatar     : 'mm',
+      meta       : guest,
+      pageSize   : '10' || 10,
+      visitor    : false,
+      lang       : '' || 'zh-cn',
+      path       : location.pathname,
+      recordIP   : false,
+      serverURLs : ''
+    });
+  }, window.Valine);
+});
+</script>
+
+  <div class="bg_content">
+  <canvas id="canvas"></canvas>
+</div>
+<script src="/live2dw/lib/L2Dwidget.min.js?094cbace49a39548bed64abff5988b05"></script><script>L2Dwidget.init({"log":false,"pluginJsPath":"lib/","pluginModelPath":"assets/","pluginRootPath":"live2dw/","tagMode":false});</script></body>
+</html>
+<script type="text/javascript" src="/js/src/dynamic_bg.js"></script>

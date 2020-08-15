@@ -2,16 +2,23 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   
   <url>
-    <loc>https://thisiswilli.cn/2020/07/14/flink%E4%B8%AD%E7%9A%84%E7%8A%B6%E6%80%81%E7%BC%96%E7%A8%8B%E5%92%8C%E5%AE%B9%E9%94%99%E6%9C%BA%E5%88%B6/</loc>
+    <loc>https://thisiswilli.cn/2020/05/10/Flink%E4%B8%AD%E7%9A%84Streamingapi/</loc>
     
-    <lastmod>2020-07-14T13:54:56.584Z</lastmod>
+    <lastmod>2020-08-15T15:34:19.006Z</lastmod>
     
   </url>
   
   <url>
-    <loc>https://thisiswilli.cn/2020/07/10/Flink%E4%B8%AD%E7%9A%84Streamingapi/</loc>
+    <loc>https://thisiswilli.cn/2020/05/14/flink%E4%B8%AD%E7%9A%84%E7%8A%B6%E6%80%81%E7%BC%96%E7%A8%8B%E5%92%8C%E5%AE%B9%E9%94%99%E6%9C%BA%E5%88%B6/</loc>
     
-    <lastmod>2020-07-10T07:24:59.705Z</lastmod>
+    <lastmod>2020-08-15T15:34:08.289Z</lastmod>
+    
+  </url>
+  
+  <url>
+    <loc>https://thisiswilli.cn/2020/06/15/flink1-11%E4%B8%ADwatermark%E7%9A%84%E5%88%9B%E5%BB%BA%E4%BB%A5%E5%8F%8A%E5%A6%82%E4%BD%95%E4%BD%BF%E7%94%A8watermark%E5%A4%84%E7%90%86%E4%B9%B1%E5%BA%8F%E6%95%B0%E6%8D%AE%E5%92%8C%E8%BF%9F%E5%88%B0%E6%95%B0%E6%8D%AE/</loc>
+    
+    <lastmod>2020-08-15T15:34:03.814Z</lastmod>
     
   </url>
   
