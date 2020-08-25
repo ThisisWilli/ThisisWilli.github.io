@@ -4,6 +4,7 @@
     <title>flink源码阅读之JobGraph的生成过程</title>
     <url>/2020/07/25/flink%E6%BA%90%E7%A0%81%E9%98%85%E8%AF%BB%E4%B9%8BJobGraph%E7%9A%84%E7%94%9F%E6%88%90%E8%BF%87%E7%A8%8B/</url>
     <content><![CDATA[<h1 id="flink源码阅读之JobGraph的生成过程"><a href="#flink源码阅读之JobGraph的生成过程" class="headerlink" title="flink源码阅读之JobGraph的生成过程"></a>flink源码阅读之JobGraph的生成过程</h1><p>本文结合源码介绍flink中JobGraph的生成过程，flink版本为flink1.11</p>
+<a id="more"></a>
 <p>flink job在最初会生成一个StreamGraph，然而StreamGraph只是程序初步得到的一个数据链路，根据算子的并行度等因素还能优化成为JobGraph。<strong>JobGraph的存在主要是为了兼容batch process</strong>，Streaming process最初产生的是StreamGraph，而batch process产生的则是OptimizedPlan，他们最后都会转化为JobGraph。</p>
 <h2 id="生成JobGraph的整体流程"><a href="#生成JobGraph的整体流程" class="headerlink" title="生成JobGraph的整体流程"></a>生成JobGraph的整体流程</h2><h3 id="从StreamGraph到JobGraph的转化步骤"><a href="#从StreamGraph到JobGraph的转化步骤" class="headerlink" title="从StreamGraph到JobGraph的转化步骤"></a>从StreamGraph到JobGraph的转化步骤</h3><ol>
 <li><p>设置调度模式，Eager 所有节点立即启动。</p>
